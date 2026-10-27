@@ -28,7 +28,21 @@ TZ=America/New_York git log --reverse --format='%h %ad %s' --date=format-local:'
 | `f1b04a8` | 02:19 | 09:19 | Web API server on `node:http` with no dependencies: scan, review queue, named approvals, inventory, restock draft. The replay provider stays the default |
 | `8fe2959` | 02:19 | 09:19 | Web UI with five views: photo upload with SAM boxes overlaid, review queue, approve-by-name, inventory with expiry flags, restock draft |
 | `542e3f8` | 02:19 | 09:19 | Web API tests (14 tests in total) |
-| *(this commit)* | | | `BUILT_DURING_EVENT.md`, `DEMO_SCRIPT.md`, README update |
+| `7d1c815` | 02:20 | 09:20 | `BUILT_DURING_EVENT.md`, `DEMO_SCRIPT.md`, README update |
+
+### Hardening, tests and accessibility
+| Commit | ET | UTC+3 | What |
+|---|---|---|---|
+| `c722403` | 09:39 | 16:39 | Correct the event window in the docs and footer (the building period starts at the Oct 26 kickoff) |
+| `e2aa84f` | 09:40 | 16:40 | Validate the mock/meta provider switch, failing fast on bad config (3 tests) |
+| `e3af4e9` | 09:40 | 16:40 | Meta API client: timeout, retry on 429/5xx with `Retry-After`, 401/403 hints, key redacted from errors (4 tests) |
+| `18f351f` | 09:40 | 16:40 | SAM 3.1 request sent as a typed user message, with the full request shape asserted |
+| `8782fea` | 09:41 | 16:41 | CLI input validation with usage and exit code 2 (2 tests) |
+| `e359872` | 09:41 | 16:41 | Replay provider explains when a photo has no recorded result (1 test) |
+| `9c36af8` | 09:41 | 16:41 | Web server: model failures return 502 with no state change, clear port-in-use message (2 tests) |
+| `5d7cab7` | 09:42 | 16:42 | Web UI accessibility: skip link, `aria-current`, focus management, error alerts, labelled inputs, focus rings, AA contrast (3 tests) |
+| `5b16d57` | 09:43 | 16:43 | README: setup and run steps, documented mock vs live provider switch |
+| *(this commit)* | | | This log updated, demo script test count (29 tests in total) |
 
 ## What the demo video shows was built during the event
 All of it: the photo-to-stock pipeline, the review queue, approve-by-name with the audit log, the expiry flags, the restock draft, and the clinical-question refusal. The video opens on this file and the `git log` above.

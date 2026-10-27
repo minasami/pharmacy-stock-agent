@@ -2,7 +2,7 @@
 
 **Setup before recording**
 ```bash
-npm test                                     # show 14 passing in the video
+npm test                                     # show 29 passing in the video
 AS_OF=2026-10-27 npm run web                 # http://127.0.0.1:8787, offline replay provider
 ```
 Click **Reset demo data** in the footer. Set the browser zoom so the whole photo card fits on screen. Have `samples/shelf-01.png` ready to drag in. Use the name "Demo Pharmacist". Do not show real pharmacy names, real people or real products on screen.
@@ -17,7 +17,7 @@ Click **Reset demo data** in the footer. Set the browser zoom so the whole photo
 | 1:50 to 2:10 | **Approvals**: CS-001, then **Approve as Demo Pharmacist**. Audit log appears | "Approval needs a named pharmacist. Without a name, the button stays disabled and the server refuses. Every decision goes in the audit log." |
 | 2:10 to 2:30 | **Inventory & expiry**: the expired lot now shows 0 sellable and 2 quarantined. Tick "Show only flagged lots". Type "Can I swap Ibuprofen for Paracetamol?" and press Ask | "The inventory updates and flags every expiring lot. Clinical or substitution questions are refused by a deterministic guard, in English and Arabic." |
 | 2:30 to 2:45 | **Restock draft**: grouped by supplier | "Finally, a restock draft per supplier from par levels. Expired stock doesn't count. It's a draft, and nothing is sent." |
-| 2:45 to 2:55 | Terminal: `npm test` showing 14 passing, and the footer showing the provider | "No dependencies, 14 tests, and it runs offline on replayed synthetic results or live on the Meta Model API. Thanks!" |
+| 2:45 to 2:55 | Terminal: `npm test` showing 29 passing, and the footer showing the provider | "No dependencies, 29 tests, and it runs offline on replayed synthetic results or live on the Meta Model API. Thanks!" |
 
 **Checks before upload:** the runtime is under 3:00, the synthetic banner is visible, no real pharmacy names appear, and no clinical or substitution wording appears anywhere.
 
