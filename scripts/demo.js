@@ -15,3 +15,9 @@ run('approve', 'CS-002', '--by', 'Demo Pharmacist');
 run('expiry');
 run('restock');
 run('ask', 'What can I give instead of Amoxicillin?');
+
+// Same work, but the agent chooses the steps (tool calling; offline: the mock planner).
+run('reset');
+run('agent', 'Morning check: audit the shelf, receive the delivery and draft the reorder', '--photo', 'samples/shelf-01.png', '--photo', 'samples/delivery-01.png');
+run('pending');
+run('agent', 'What can I give instead of Amoxicillin?');

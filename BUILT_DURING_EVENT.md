@@ -46,10 +46,20 @@ TZ=America/New_York git log --reverse --format='%h %ad %s' --date=format-local:'
 | `0237e0f` | 09:53 | 16:53 | `.gitignore` covers every `.env` variant except `.env.example`, key files, logs |
 | `f0bc8d9` | 09:53 | 16:53 | Catalog makers renamed to placeholders (Maker A/B/C) so none resembles a real company |
 | `b0dace0` | 09:54 | 16:54 | Demo script leads with the agent loop and the approval gate, with honest offline/live wording |
-| *(this commit)* | | | This log updated |
+| `722b9dd` | 09:54 | 16:54 | This log updated |
+
+### Agentic step selection (tool calling)
+| Commit | ET | UTC+3 | What |
+|---|---|---|---|
+| `b4a6ab3` | 09:59 | 16:59 | Agent tools: five function tools over the existing workflows, no approve tool, photo ids only, guarded notes (3 tests) |
+| `3c6c2d5` | 10:00 | 17:00 | Bounded agent loop and offline mock planner: guard before the planner, duplicate-scan block, step limit (5 tests) |
+| `0f7dfb5` | 10:01 | 17:01 | Meta planner: Muse Spark tool calling on `/chat/completions`, request shape checked with a fake `fetch` (2 tests) |
+| `3fad7c1` | 10:01 | 17:01 | CLI `agent` command with `--photo`, `--max-steps` and a step trace (1 test) |
+| `84c865f` | 10:03 | 17:03 | Web: Agent run view and `POST /api/agent` (3 tests) |
+| *(this commit)* | | | README agent section, demo script and `npm run demo` updated, this log (43 tests in total) |
 
 ## What the demo video shows was built during the event
-All of it: the photo-to-stock pipeline, the review queue, approve-by-name with the audit log, the expiry flags, the restock draft, and the clinical-question refusal. The video opens on this file and the `git log` above.
+All of it: the agent run where the model chooses the steps, the photo-to-stock pipeline, the review queue, approve-by-name with the audit log, the expiry flags, the restock draft, and the clinical-question refusal. The video opens on this file and the `git log` above.
 
 ## What is not ours
 - **Models:** SAM 3.1 and Muse Spark through the Meta Model API.
