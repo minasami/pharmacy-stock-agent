@@ -62,11 +62,21 @@ TZ=America/New_York git log --reverse --format='%h %ad %s' --date=format-local:'
 All of it: the agent run where the model chooses the steps, the photo-to-stock pipeline, the review queue, approve-by-name with the audit log, the expiry flags, the restock draft, and the clinical-question refusal. The video opens on this file and the `git log` above.
 
 ## What is not ours
-- **Models:** SAM 3.1 and Muse Spark through the Meta Model API.
+- **Models:** SAM 3.1 and Muse Spark through the Meta Model API. As an optional backup, Muse Spark Open (Meta open weights) through Baseten Model APIs.
 - **Runtime:** Node.js 20+ built-ins only. There are no npm dependencies.
 - **Sample photos:** generated with Pillow by our own script.
 
 ## Data
 Synthetic only. The pharmacy, products, makers, suppliers, lots and barcodes (in-store `200-` prefix) are all fictional. No real pharmacy, patient or supplier data is used. The agent gives no clinical or substitution advice.
+
+### Backup provider: open-weights Muse Spark Open on Baseten (Oct 27 ET)
+Added because dev.meta.ai redirected to an "unavailable in your region" page from Egypt in the browser. The Meta Model API path is unchanged.
+
+| Commit | ET | UTC+3 | What |
+|---|---|---|---|
+| `e85e3d1` | 12:08 | 19:08 | `MODEL_PROVIDER=baseten` config and an OpenAI-compatible Baseten client: schema in the prompt (no JSON mode), tool calling, key redaction (3 tests) |
+| `1538819` | 12:09 | 19:09 | Baseten provider for pack reads. Replies are checked in code. Without SAM 3.1, the recorded sample boxes are used and labelled as an offline fixture, and new photos get a 422 (4 tests) |
+| `61a1c97` | 12:09 | 19:09 | Agent planner on Baseten Muse Spark Open; reasoning is dropped (3 tests) |
+| *(this commit)* | | | README backup-provider section and this log (53 tests in total) |
 
 <!-- Add later days below as work continues, one heading per date (ET). -->

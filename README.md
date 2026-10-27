@@ -23,7 +23,7 @@ Requires **Node.js 20 or later** (`node --version`). There are no npm dependenci
 
 ```bash
 git clone <this repo> pharmacy-stock-agent && cd pharmacy-stock-agent
-npm test                      # 43 tests, all offline
+npm test                      # 53 tests, all offline
 npm run check                 # build check: JS syntax, JSON data, zero dependencies
 npm run demo                  # end-to-end CLI run on the synthetic photos (replay provider)
 AS_OF=2026-10-27 npm run web  # web UI on http://127.0.0.1:8787
@@ -94,6 +94,33 @@ Optional: `META_BASE_URL`, `META_SAM_MODEL` (default `sam-3.1`), `META_VISION_MO
 
 Live calls time out after `META_TIMEOUT_MS` and are retried twice on HTTP 429 or 5xx, honouring `Retry-After`. A 401 or 403 is not retried and suggests checking the key and billing. The key is redacted from every error message. If a live call fails in the web UI, the scan returns HTTP 502 with the reason and no stock, review or approval state is changed.
 
+## Backup provider: open-weights Muse Spark Open on Baseten
+If the Meta Model API cannot be reached (for example, a region where dev.meta.ai is not available), `MODEL_PROVIDER=baseten` runs the pack reads and the agent planner on **Muse Spark Open**, Meta's open-weights model, through [Baseten Model APIs](https://docs.baseten.co/inference/model-apis/overview). Its API is OpenAI-compatible: base URL `https://inference.baseten.co/v1`, Bearer `BASETEN_API_KEY`, `POST /chat/completions`.
+
+```bash
+export MODEL_PROVIDER=baseten
+export BASETEN_API_KEY="..."      # never commit it
+AS_OF=2026-10-27 npm run web
+```
+Optional:
+- `BASETEN_MODEL` (default `meta-models/muse-spark-open-1026`, the slug given for the event. Baseten's docs list `meta-models/muse-spark-open`; if the default is rejected, set that).
+- `BASETEN_BASE_URL` (default `https://inference.baseten.co/v1`).
+- `BASETEN_REASONING_EFFORT` (`low`, `medium`, `high` or `xhigh`; the model always reasons and defaults to `xhigh`).
+- `BASETEN_TIMEOUT_MS` (default 120000).
+
+If `MODEL_PROVIDER` is unset, `MODEL_API_KEY` selects `meta`; otherwise `BASETEN_API_KEY` selects `baseten`.
+
+What differs from the Meta Model API, following Baseten's docs:
+- **Reads:** Muse Spark Open has no structured-output or JSON mode on Baseten. The JSON schema is therefore put in the prompt, with no `response_format`. The reply is parsed, and every field is checked in code (`normaliseReadings`). A missing or malformed pack read becomes an unreadable placeholder with confidence 0, which goes to the pharmacist's review queue. Nothing is invented.
+- **Planner:** tool calling with `tools` and `tool_choice: "auto"`. `parallel_tool_calls` is not documented for Baseten, so it is not sent. The loop runs one tool per step within the step cap either way. `reasoning_content` is dropped and never shown or sent back.
+- **SAM 3.1 is Meta-API-only.** It is not available on Baseten. Pack boxes come from:
+  1. SAM 3.1 on the Meta Model API, if `MODEL_API_KEY` is also set. Then any photo works.
+  2. Otherwise, the **recorded boxes of the bundled synthetic samples** (the offline fixture sidecars `samples/*.truth.json`). Only the boxes come from the fixture; Muse Spark Open does the reading live. The CLI ("Pack boxes: recorded sample boxes (offline fixture, not SAM)"), the web header and every scan result label this, and each box carries `source: "fixture"`.
+  3. Any other photo without SAM is refused with HTTP 422 and a clear message. Regions are never guessed.
+- **Status:** request shapes are tested with a fake `fetch` (no network). **Not run against live Baseten yet**, since no Baseten key or credits were available.
+
+Modal also hosts Muse Spark Open on its endpoints. Pointing `BASETEN_BASE_URL` at another OpenAI-compatible host may work, but this is untested and not claimed.
+
 ## Web UI
 `npm run web` serves a small UI built on `node:http` with plain HTML, CSS and JS. There is no framework and no build step. It binds to 127.0.0.1. It has an agent view and five step views:
 - **Agent run**: type a goal, tick sample photos or upload your own, set the step limit, and run. The step trace shows which tool the planner chose at each step and links to the proposed change sets, the review queue and the restock draft.
@@ -115,9 +142,10 @@ See [Mock vs live provider](#mock-vs-live-provider) to switch to the live Meta M
 - **Not yet verified against the live API, because no key was available yet:** the exact non-streaming envelope of the SAM response, whether the JSON schema is honoured for vision, and how well Muse Spark chooses tools for these goals. The code tolerates the common shapes.
 
 ## Layout
-`src/meta` API client and SAM parser · `src/providers` mock and meta · `src/inventory` expiry, matching, approval-gated store · `src/agent` scan, workflows, formatting, agent tools, loop and planners · `src/safety` guard · `src/web` web server · `web` browser UI · `data` synthetic catalog and seed stock · `samples` synthetic photos · `tests`.
+`src/meta` API clients (Meta, Baseten) and SAM parser · `src/providers` mock, meta and baseten · `src/inventory` expiry, matching, approval-gated store · `src/agent` scan, workflows, formatting, agent tools, loop and planners · `src/safety` guard · `src/web` web server · `web` browser UI · `data` synthetic catalog and seed stock · `samples` synthetic photos · `tests`.
 
 ## Roadmap
+- Baseten key: run the reads and agent planner on Muse Spark Open, and confirm the model slug.
 - Live key: run the real SAM 3.1 and Muse Spark calls on the sample photos, record accuracy, and record the tool choices Muse Spark makes for a set of goals.
 - Arabic labels in the web UI.
 - Synthetic photo set made with Muse Image for harder cases (glare, angles, Arabic text).
