@@ -1,6 +1,6 @@
 # Pharmacy Stock Agent
 
-Built for the Meta Global AI Developer Hackathon (building period from Oct 27, 2026). Every commit in this repo was made during the event.
+Built for the Meta Global AI Developer Hackathon (building period from Oct 27, 2026). Every commit in this repo was made during the event. See `BUILT_DURING_EVENT.md`.
 
 A pharmacist photographs a shelf or an opened delivery carton. The agent:
 
@@ -20,10 +20,22 @@ A pharmacist photographs a shelf or an opened delivery carton. The agent:
 Requires Node 20 or later. There are no npm dependencies.
 
 ```bash
-npm test          # 10 tests
-npm run demo      # end-to-end on synthetic photos with the offline mock provider
+npm test          # 14 tests
+npm run check     # build check: JS syntax, JSON data, zero dependencies
+npm run demo      # end-to-end CLI run on synthetic photos with the offline replay (mock) provider
+npm run web       # web UI on http://127.0.0.1:8787 (set AS_OF=2026-10-27 for the demo date)
 node src/cli.js   # usage
 ```
+
+## Web UI
+`npm run web` serves a small UI built on `node:http` with plain HTML, CSS and JS. There is no framework and no build step. It binds to 127.0.0.1. It has five views:
+1. **Scan photo**: pick a sample or upload a photo. Detected packs are overlaid as boxes, coloured OK, near expiry, expired, or needs review (dashed).
+2. **Review queue**: unclear packs with a crop of the region and the reasons. A named pharmacist records what is printed on the pack, choosing from the catalog with nothing pre-selected, or sets it aside.
+3. **Approvals**: pending change sets. Approve or reject by name, with an audit log.
+4. **Inventory & expiry**: every lot with days to expiry and flags, stock levels against reorder points, and a stock-only question box.
+5. **Restock draft**: grouped by supplier, downloadable as text. Nothing is sent.
+
+Under the offline replay provider, uploads must be byte-identical copies of the bundled sample photos, because results are replayed from their sidecar files. Live mode reads any photo.
 
 To use the live Meta Model API, set `MODEL_API_KEY` (see `.env.example`). The default is `MODEL_PROVIDER=mock`, which replays the sample sidecar files so the demo runs without a key.
 
@@ -34,13 +46,13 @@ To use the live Meta Model API, set `MODEL_API_KEY` (see `.env.example`). The de
 - **Not yet verified against the live API, because no key was available on day 1:** the exact non-streaming envelope of the SAM response, and whether the JSON schema is honoured for vision. The code tolerates the common shapes.
 
 ## Layout
-`src/meta` API client and SAM parser · `src/providers` mock and meta · `src/inventory` expiry, matching, approval-gated store · `src/agent` scan, workflows, formatting · `src/safety` guard · `data` synthetic catalog and seed stock · `samples` synthetic photos · `tests`.
+`src/meta` API client and SAM parser · `src/providers` mock and meta · `src/inventory` expiry, matching, approval-gated store · `src/agent` scan, workflows, formatting · `src/safety` guard · `src/web` web server · `web` browser UI · `data` synthetic catalog and seed stock · `samples` synthetic photos · `tests`.
 
 ## Roadmap
 - Live key: run the real SAM 3.1 and Muse Spark calls on the sample photos and record accuracy.
-- Web UI for the review queue and approvals, plus Arabic labels.
+- Arabic labels in the web UI.
 - Synthetic photo set made with Muse Image for harder cases (glare, angles, Arabic text).
-- Demo video.
+- Demo video (script in `DEMO_SCRIPT.md`).
 
 ## License
 MIT. See `LICENSE`.
