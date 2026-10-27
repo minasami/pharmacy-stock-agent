@@ -1,24 +1,27 @@
 # Demo video script (target 2:45, hard limit 3:00)
 
+**Story in one line:** a stock-operations agent that runs a multi-step loop (see → read → check → propose) and then **stops and waits for a named pharmacist** before anything changes. It handles stock only. It is not a medical-advice tool and not a one-shot image analyzer.
+
 **Setup before recording**
 ```bash
-npm test                                     # show 29 passing in the video
-AS_OF=2026-10-27 npm run web                 # http://127.0.0.1:8787, offline replay provider
+npm test                                     # 29 passing (shown at the end)
+AS_OF=2026-10-27 npm run web                 # http://127.0.0.1:8787
 ```
-Click **Reset demo data** in the footer. Set the browser zoom so the whole photo card fits on screen. Have `samples/shelf-01.png` ready to drag in. Use the name "Demo Pharmacist". Do not show real pharmacy names, real people or real products on screen.
+- Click **Reset demo data** in the footer. Zoom so the whole photo card fits. Approver name: "Demo Pharmacist".
+- **Preferred: record in live mode** (`MODEL_PROVIDER=meta`, `MODEL_API_KEY` set, key never on screen) after one successful live test run. Then the boxes and reads on screen really come from SAM 3.1 and Muse Spark.
+- **If recording offline (replay mode):** say so on screen and in the voice-over (lines marked *offline*). In replay mode the results come from synthetic fixture files, not from a live model call. Never claim a live call that did not happen.
+- Show only this repo, which was built during the event. No other projects, no real pharmacy names, people or products, no clinical wording.
 
 | Time | On screen | Voice-over |
 |---|---|---|
-| 0:00 to 0:15 | Title card, then `BUILT_DURING_EVENT.md` and `git log` (ET dates) | "Pharmacy Stock Agent. Everything you'll see was built during the Meta hackathon, after the Oct 26 kickoff. Here is the commit log." |
-| 0:15 to 0:30 | Header and synthetic-data banner | "Pharmacies lose money and time to expired stock and manual counts. Our agent turns a phone photo into stock updates, but only for stock. It never gives clinical or substitution advice, and a pharmacist approves every change. All data here is synthetic." |
-| 0:30 to 1:05 | **Scan photo**: drag in `shelf-01.png`. Boxes appear. Hover a box | "SAM 3.1 finds every pack on the shelf. Muse Spark reads each region's name, strength, lot and expiry into a strict JSON schema. Green is fine, orange is near expiry, red is expired. Purple dashed means the agent isn't sure, so it doesn't guess." |
-| 1:05 to 1:20 | Shelf audit panel: pull list, near expiry, proposed CS-001 | "It found an expired Omeprazole lot and proposed a quarantine. Nothing has changed yet." |
-| 1:20 to 1:50 | **Review queue**: RV-001 crop, reasons. Type the name, pick the item from the catalog, type the lot and expiry, then **Record as identified** | "This pack's name and lot were unreadable. The pharmacist reads the pack and records what is printed. Nothing is pre-selected, and the agent never suggests a different product. Their name goes in the log." |
-| 1:50 to 2:10 | **Approvals**: CS-001, then **Approve as Demo Pharmacist**. Audit log appears | "Approval needs a named pharmacist. Without a name, the button stays disabled and the server refuses. Every decision goes in the audit log." |
-| 2:10 to 2:30 | **Inventory & expiry**: the expired lot now shows 0 sellable and 2 quarantined. Tick "Show only flagged lots". Type "Can I swap Ibuprofen for Paracetamol?" and press Ask | "The inventory updates and flags every expiring lot. Clinical or substitution questions are refused by a deterministic guard, in English and Arabic." |
-| 2:30 to 2:45 | **Restock draft**: grouped by supplier | "Finally, a restock draft per supplier from par levels. Expired stock doesn't count. It's a draft, and nothing is sent." |
-| 2:45 to 2:55 | Terminal: `npm test` showing 29 passing, and the footer showing the provider | "No dependencies, 29 tests, and it runs offline on replayed synthetic results or live on the Meta Model API. Thanks!" |
+| 0:00 to 0:20 | Title card with the loop: **Photo → SAM 3.1 finds packs → Muse Spark reads each pack → catalog + expiry checks → proposed change set → pharmacist approves → stock updates** | "I'm a pharmacist. Expired stock and manual counts cost pharmacies time and money. This agent runs the whole stock check from one phone photo, then it stops: nothing changes until a named pharmacist approves. Stock only, never clinical advice. All data is synthetic." |
+| 0:20 to 0:50 | **Scan photo**: shelf photo. Boxes appear. Hover a red box and a purple dashed box | "Step one, SAM 3.1 finds every pack. Step two, Muse Spark reads each region into a strict schema: name, strength, lot, expiry. Step three, the agent checks the catalog and expiry dates. Red is expired, orange is near expiry, and dashed purple means it isn't sure, so it doesn't guess." *Offline: "This run replays synthetic fixtures; live mode calls both models."* |
+| 0:50 to 1:05 | Shelf audit panel: pull list, near expiry, **proposed CS-001** | "Step four, it proposes an action: quarantine the expired lot. That's a proposal, not a change. Stock is untouched." |
+| 1:05 to 1:30 | **Review queue**: the unclear pack's crop and reasons. Pick the item from the catalog (nothing pre-selected), type lot and expiry, **Record as identified** | "When the read is doubtful, the agent hands it to a human. The pharmacist records what is printed. Nothing is pre-selected and the agent never suggests another product." |
+| 1:30 to 1:55 | **Approvals**: show the button disabled with no name, type "Demo Pharmacist", **Approve**. Audit log appears | "The human gate. With no name, the button is disabled and the server refuses too. With a name, the change applies and goes in the audit log." |
+| 1:55 to 2:10 | **Scan photo**: delivery carton sample → proposed receive change set → approve | "Same loop for deliveries: it receives good stock and refuses to receive a short-dated lot, again waiting for approval." |
+| 2:10 to 2:25 | **Inventory & expiry**: expired lot now quarantined, "Show only flagged lots". Ask "Can I swap Ibuprofen for Paracetamol?" | "Inventory reflects only approved changes. Ask a substitution question and a deterministic guard refuses, in English or Arabic." |
+| 2:25 to 2:40 | **Restock draft** by supplier, download | "Last step, a restock draft from par levels. Expired stock doesn't count, and it's a draft: nothing is sent." |
+| 2:40 to 2:52 | `BUILT_DURING_EVENT.md` / `git log`, then `npm test` 29 passing | "Everything here was built during the hackathon. No dependencies, 29 tests, and it runs live on the Meta Model API or offline on synthetic fixtures." |
 
-**Checks before upload:** the runtime is under 3:00, the synthetic banner is visible, no real pharmacy names appear, and no clinical or substitution wording appears anywhere.
-
-**If recording live mode:** set `MODEL_PROVIDER=meta` and `MODEL_API_KEY` in your shell, and keep the key off screen. Before claiming live results in the video, check that the live SAM response envelope matches the parser.
+**Checks before upload:** under 3:00; synthetic banner visible; the provider in the header matches what the voice-over claims; no real pharmacy names; no clinical or substitution wording; key never visible.
