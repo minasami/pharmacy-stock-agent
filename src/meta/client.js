@@ -14,7 +14,9 @@ export async function imageDataUrl(path) {
 
 export class MetaClient {
   constructor(cfg, fetchImpl = globalThis.fetch) {
-    if (!cfg.apiKey) throw new Error('MODEL_API_KEY is not set; use MODEL_PROVIDER=mock to run offline.');
+    this.label = cfg.label ?? 'Meta API';
+    this.keyEnv = cfg.keyEnv ?? 'MODEL_API_KEY';
+    if (!cfg.apiKey) throw new Error(`${this.keyEnv} is not set; use MODEL_PROVIDER=mock to run offline.`);
     this.cfg = cfg;
     this.fetch = fetchImpl;
   }
@@ -38,11 +40,11 @@ export class MetaClient {
         const timedOut = e?.name === 'TimeoutError' || e?.name === 'AbortError';
         if (attempt < retries) { await sleep(backoff(attempt)); continue; }
         throw new Error(timedOut
-          ? `Meta API ${path} timed out after ${timeoutMs} ms`
-          : `Meta API ${path} network error: ${this.redact(e?.message ?? String(e))}`);
+          ? `${this.label} ${path} timed out after ${timeoutMs} ms`
+          : `${this.label} ${path} network error: ${this.redact(e?.message ?? String(e))}`);
       }
       if (res.ok) {
-        try { return await res.json(); } catch { throw new Error(`Meta API ${path} returned a non-JSON body`); }
+        try { return await res.json(); } catch { throw new Error(`${this.label} ${path} returned a non-JSON body`); }
       }
       const retryable = res.status === 429 || res.status >= 500;
       if (retryable && attempt < retries) {
@@ -52,9 +54,9 @@ export class MetaClient {
       }
       const detail = this.redact((await res.text().catch(() => '')).slice(0, 300));
       const hint = res.status === 401 || res.status === 403
-        ? ' (check MODEL_API_KEY and that credits or a card are on the account)'
+        ? ` (check ${this.keyEnv} and that credits or a card are on the account)`
         : res.status === 429 ? ' (rate limited; try again shortly)' : '';
-      throw new Error(`Meta API ${path} failed: HTTP ${res.status}${hint} ${detail}`.trim());
+      throw new Error(`${this.label} ${path} failed: HTTP ${res.status}${hint} ${detail}`.trim());
     }
   }
 
@@ -108,9 +110,66 @@ export class MetaClient {
       parallel_tool_calls: false,
     });
     const msg = json?.choices?.[0]?.message;
-    if (!msg || typeof msg !== 'object') throw new Error('Meta API /chat/completions returned no message');
+    if (!msg || typeof msg !== 'object') throw new Error(`${this.label} /chat/completions returned no message`);
     return msg;
   }
+}
+
+// Baseten Model APIs (open-weights Muse Spark Open), OpenAI-compatible Chat Completions at
+// https://inference.baseten.co/v1 with Bearer BASETEN_API_KEY. Differences from the Meta
+// Model API, from docs.baseten.co (Model APIs overview, Vision, Function calling):
+// - Muse Spark Open does NOT support structured outputs or JSON mode, so the schema goes
+//   in the prompt and the reply is parsed and checked by code (no response_format).
+// - Tool calling is supported; parallel_tool_calls is not documented, so it is not sent.
+//   The agent loop runs at most one call per step and caps the steps either way.
+// - Images go as base64 data URLs in image_url (allowed; counts toward the body limit).
+// - SAM 3.1 is not offered there, so segment() is unavailable on this client.
+export class BasetenClient extends MetaClient {
+  constructor(cfg, fetchImpl) {
+    super({ label: 'Baseten API', keyEnv: 'BASETEN_API_KEY', ...cfg }, fetchImpl);
+  }
+
+  async segment() {
+    throw new Error('SAM 3.1 is only on the Meta Model API, not on Baseten.');
+  }
+
+  extra() {
+    return this.cfg.reasoningEffort ? { reasoning_effort: this.cfg.reasoningEffort } : {};
+  }
+
+  async readJson(imagePath, prompt, schema) {
+    const json = await this.post('/chat/completions', {
+      model: this.cfg.visionModel,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: `${prompt}\nReply with one JSON object only, no other text. It must match this JSON Schema:\n${JSON.stringify(schema)}` },
+          { type: 'image_url', image_url: { url: await imageDataUrl(imagePath) } },
+        ],
+      }],
+      ...this.extra(),
+    });
+    return parseJsonLoose(json?.choices?.[0]?.message?.content ?? '');
+  }
+
+  async chatWithTools(messages, tools) {
+    const json = await this.post('/chat/completions', {
+      model: this.cfg.agentModel ?? this.cfg.visionModel,
+      messages,
+      tools,
+      tool_choice: 'auto',
+      ...this.extra(),
+    });
+    const msg = json?.choices?.[0]?.message;
+    if (!msg || typeof msg !== 'object') throw new Error(`${this.label} /chat/completions returned no message`);
+    return msg;
+  }
+}
+
+// Build the Baseten client from the loaded config (cfg.baseten), never logging the key.
+export function basetenClient(cfg, fetchImpl) {
+  const b = cfg.baseten ?? {};
+  return new BasetenClient({ apiKey: b.apiKey, baseUrl: b.baseUrl, visionModel: b.model, agentModel: b.model, timeoutMs: b.timeoutMs, reasoningEffort: b.reasoningEffort, sleep: cfg.sleep, retries: cfg.retries }, fetchImpl);
 }
 
 const backoff = (attempt) => 500 * 2 ** attempt;

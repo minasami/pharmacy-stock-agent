@@ -108,7 +108,7 @@ export function createApp(opts = {}) {
       // Model / provider failures are upstream problems, not server bugs: report them
       // as 502 with the (key-redacted) reason so the pharmacist knows to retry.
       if (e instanceof ReplayMissError) throw new HttpError(422, e.message);
-      if (/^Meta API |Model returned no JSON|JSON/.test(e.message ?? '')) throw new HttpError(502, `The vision model call failed, nothing was changed. ${e.message}`);
+      if (/^(Meta|Baseten) API |Model returned no JSON|JSON/.test(e.message ?? '')) throw new HttpError(502, `The vision model call failed, nothing was changed. ${e.message}`);
       throw e;
     }
     const reviews = await queueReviews(store, mode, img.url, r.review);
@@ -147,7 +147,7 @@ export function createApp(opts = {}) {
       return await runAgent({ goal, photos, ctx, planner: planner(), maxSteps });
     } catch (e) {
       if (e instanceof ToolError) throw new HttpError(400, e.message);
-      if (/^Meta API /.test(e.message ?? '')) throw new HttpError(502, `The planning model call failed. Nothing was approved; any change sets already proposed are still waiting on the Approvals page. ${e.message}`);
+      if (/^(Meta|Baseten) API /.test(e.message ?? '')) throw new HttpError(502, `The planning model call failed. Nothing was approved; any change sets already proposed are still waiting on the Approvals page. ${e.message}`);
       throw e;
     }
   }
