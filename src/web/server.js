@@ -10,6 +10,7 @@ import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadConfig, providerLabel, ConfigError } from '../config.js';
 import { getProvider } from '../providers/index.js';
+import { ReplayMissError } from '../providers/mock.js';
 import { Store } from '../inventory/store.js';
 import { today, parseExpiry, expiryStatus, daysUntil } from '../inventory/expiry.js';
 import { shelfAudit, deliveryIntake, expiryReport, draftRestock } from '../agent/workflows.js';
@@ -96,7 +97,16 @@ export function createApp(opts = {}) {
     const img = await resolveImage(body);
     const catalog = await store.catalog();
     const ctx = { provider, catalog, store, asOf: asOf(), nearDays };
-    const r = mode === 'delivery' ? await deliveryIntake(img.path, ctx) : await shelfAudit(img.path, ctx);
+    let r;
+    try {
+      r = mode === 'delivery' ? await deliveryIntake(img.path, ctx) : await shelfAudit(img.path, ctx);
+    } catch (e) {
+      // Model / provider failures are upstream problems, not server bugs: report them
+      // as 502 with the (key-redacted) reason so the pharmacist knows to retry.
+      if (e instanceof ReplayMissError) throw new HttpError(422, e.message);
+      if (/^Meta API |Model returned no JSON|JSON/.test(e.message ?? '')) throw new HttpError(502, `The vision model call failed, nothing was changed. ${e.message}`);
+      throw e;
+    }
     const reviews = await store.addReviews(r.review.map((p) => ({
       source: mode, image: img.url, region: p.region, box: p.box, reading: p.reading, reasons: p.reviewReasons,
     })));
@@ -231,7 +241,10 @@ export function createApp(opts = {}) {
 export function startServer({ port = 0, host = '127.0.0.1', ...opts } = {}) {
   const app = createApp(opts);
   const server = createServer((req, res) => { app.handle(req, res); });
-  return new Promise((resolve) => server.listen(port, host, () => resolve(server)));
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(port, host, () => { server.off('error', reject); resolve(server); });
+  });
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
@@ -243,6 +256,10 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   }
   const port = Number(process.env.PORT || 8787);
   const host = process.env.HOST || '127.0.0.1';
-  const server = await startServer({ port, host, cfg });
+  let server;
+  try { server = await startServer({ port, host, cfg }); } catch (e) {
+    console.error(e.code === 'EADDRINUSE' ? `Port ${port} on ${host} is already in use. Stop the other server or run with PORT=8788 npm run web.` : `Could not start server: ${e.message}`);
+    process.exit(1);
+  }
   console.log(`Pharmacy Stock Agent UI on http://${host}:${server.address().port}  (provider: ${providerLabel(cfg)}, as of ${process.env.AS_OF || today()}, synthetic data)`);
 }
