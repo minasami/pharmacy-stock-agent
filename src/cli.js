@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // stock-agent CLI. Runs on the mock provider unless MODEL_API_KEY is set.
+import { existsSync, statSync } from 'node:fs';
 import { loadConfig, ConfigError } from './config.js';
 import { getProvider } from './providers/index.js';
 import { Store } from './inventory/store.js';
@@ -21,10 +22,32 @@ const USAGE = `Usage: stock-agent <command> [args] [--as-of YYYY-MM-DD] [--json]
 
 function opt(args, name) { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; }
 
+class UsageError extends Error {}
+
+// --as-of must be a real calendar date, so expiry maths never runs on garbage.
+function validDate(v) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v ?? '');
+  const d = m && new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  if (!d || d.toISOString().slice(0, 10) !== v) throw new UsageError(`--as-of must be a date like 2026-10-27 (got "${v}").`);
+  return v;
+}
+
+function photoArg(p, cmd) {
+  if (!p || p.startsWith('--')) throw new UsageError(`${cmd} needs a photo path, e.g. stock-agent ${cmd} samples/${cmd === 'shelf' ? 'shelf' : 'delivery'}-01.png`);
+  if (!existsSync(p) || !statSync(p).isFile()) throw new UsageError(`Photo not found: ${p}`);
+  if (!/\.(png|jpe?g|webp)$/i.test(p)) throw new UsageError(`Photo must be PNG, JPEG or WebP: ${p}`);
+  return p;
+}
+
+function changeSetArg(id, cmd) {
+  if (!/^CS-\d{3,}$/.test(id ?? '')) throw new UsageError(`${cmd} needs a change set id like CS-001 (see "stock-agent pending").`);
+  return id;
+}
+
 async function main(argv) {
   const [cmd, ...args] = argv;
   const cfg = loadConfig();
-  const asOf = opt(args, '--as-of') ?? today();
+  const asOf = args.includes('--as-of') ? validDate(opt(args, '--as-of')) : today();
   const json = args.includes('--json');
   const store = new Store(process.env.STOCK_STATE_DIR || undefined);
   const catalog = await store.catalog();
@@ -34,7 +57,7 @@ async function main(argv) {
   switch (cmd) {
     case 'reset': await store.reset(); return console.log('Stock reset to synthetic seed.');
     case 'shelf': {
-      const r = await shelfAudit(args[0], ctx);
+      const r = await shelfAudit(photoArg(args[0], 'shelf'), ctx);
       return print(r, [
         `Shelf audit (${r.scan.provider}, as of ${asOf}): ${r.scan.packs.length} packs detected`,
         `Pull now (expired): ${r.pull.map((l) => `${l.sku} lot ${l.lot}`).join(', ') || 'none'}`,
@@ -45,7 +68,7 @@ async function main(argv) {
       ].join('\n'));
     }
     case 'delivery': {
-      const r = await deliveryIntake(args[0], ctx);
+      const r = await deliveryIntake(photoArg(args[0], 'delivery'), ctx);
       return print(r, [
         `Delivery intake (${r.scan.provider}, as of ${asOf}): ${r.scan.packs.length} packs detected`,
         `To receive: ${r.received.map((l) => `${l.sku} lot ${l.lot} x${l.count}`).join(', ') || 'none'}`,
@@ -60,14 +83,17 @@ async function main(argv) {
       const p = (await store.pending()).filter((c) => c.status === 'awaiting_pharmacist_approval');
       return print(p, p.map((c) => `${c.id} ${c.kind}: ${c.changes.length} change(s) from ${c.source}`).join('\n') || 'Nothing pending.');
     }
-    case 'approve': { const c = await store.approve(args[0], opt(args, '--by')); return console.log(`${c.id} approved by ${c.approvedBy}; stock updated.`); }
-    case 'reject': { const c = await store.reject(args[0], opt(args, '--by'), opt(args, '--reason')); return console.log(`${c.id} rejected.`); }
-    case 'ask': return console.log(answerStockQuestion(args[0], await store.inventory(), catalog).answer);
+    case 'approve': { const c = await store.approve(changeSetArg(args[0], 'approve'), opt(args, '--by')); return console.log(`${c.id} approved by ${c.approvedBy}; stock updated.`); }
+    case 'reject': { const c = await store.reject(changeSetArg(args[0], 'reject'), opt(args, '--by'), opt(args, '--reason')); return console.log(`${c.id} rejected.`); }
+    case 'ask':
+      if (!args[0] || args[0].startsWith('--')) throw new UsageError('ask needs a question in quotes, e.g. stock-agent ask "how many Paracetamol packs do we have?"');
+      return console.log(answerStockQuestion(args[0], await store.inventory(), catalog).answer);
     default: console.log(USAGE); if (cmd) process.exitCode = 1;
   }
 }
 
 main(process.argv.slice(2)).catch((e) => {
+  if (e instanceof UsageError) { console.error(`${e.message}\n\n${USAGE}`); process.exitCode = 2; return; }
   console.error(e instanceof ConfigError ? `Config error: ${e.message}` : `Error: ${e.message}`);
   process.exitCode = e instanceof ConfigError ? 2 : 1;
 });
