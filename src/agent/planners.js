@@ -6,12 +6,20 @@
 // It is NOT a model; README and the UI say so.
 //
 // metaPlanner: live Muse Spark tool calling through the Meta Model API.
-import { MetaClient } from '../meta/client.js';
+// basetenPlanner: the same loop on open-weights Muse Spark Open (Baseten Model APIs).
+import { MetaClient, basetenClient } from '../meta/client.js';
 
 export function metaPlanner(cfg, fetchImpl) {
-  const client = new MetaClient(cfg, fetchImpl);
+  return chatPlanner(`meta (${cfg.agentModel ?? cfg.visionModel})`, new MetaClient(cfg, fetchImpl));
+}
+
+export function basetenPlanner(cfg, fetchImpl) {
+  return chatPlanner(`baseten (${cfg.baseten.model})`, basetenClient(cfg, fetchImpl));
+}
+
+function chatPlanner(name, client) {
   return {
-    name: `meta (${cfg.agentModel ?? cfg.visionModel})`,
+    name,
     async next({ messages, tools }) {
       const msg = await client.chatWithTools(messages, tools);
       // Keep only the fields the conversation needs; arguments stay a JSON string and
@@ -19,13 +27,16 @@ export function metaPlanner(cfg, fetchImpl) {
       const calls = Array.isArray(msg.tool_calls) ? msg.tool_calls
         .filter((c) => c?.function?.name)
         .map((c) => ({ id: String(c.id ?? ''), type: 'function', function: { name: String(c.function.name), arguments: typeof c.function.arguments === 'string' ? c.function.arguments : JSON.stringify(c.function.arguments ?? {}) } })) : [];
+      // reasoning_content (Muse Spark Open always reasons) is dropped, never shown or resent.
       return { role: 'assistant', content: typeof msg.content === 'string' ? msg.content : null, ...(calls.length ? { tool_calls: calls } : {}) };
     },
   };
 }
 
 export function getPlanner(cfg, fetchImpl) {
-  return cfg.provider === 'meta' ? metaPlanner(cfg, fetchImpl) : mockPlanner();
+  if (cfg.provider === 'meta') return metaPlanner(cfg, fetchImpl);
+  if (cfg.provider === 'baseten') return basetenPlanner(cfg, fetchImpl);
+  return mockPlanner();
 }
 
 const DELIVERY_HINT = /deliver|carton|intake|receiv/i;

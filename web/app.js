@@ -319,6 +319,8 @@ async function viewAgent(root) {
       h('div', { class: 'row' }, ...picks.map((p) => p.el), file, steps, h('button', { class: 'primary', onclick: go }, 'Run agent')),
       h('p', { class: 'small muted' }, st.planner?.startsWith('meta')
         ? `Live mode: ${st.planner} chooses each step through tool calling on the Meta Model API.`
+        : st.planner?.startsWith('baseten')
+        ? `Backup live mode: ${st.planner} (open-weights Muse Spark Open) chooses each step through tool calling on Baseten.`
         : 'Offline mode (default): a deterministic mock planner simulates the model\u2019s tool choices from your request and the photo names, so the demo runs without a key. It is not a model.')),
     out);
   if (state.lastAgent) renderAgent(out, state.lastAgent);
