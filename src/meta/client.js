@@ -95,6 +95,22 @@ export class MetaClient {
     });
     return parseJsonLoose(json?.choices?.[0]?.message?.content ?? '');
   }
+
+  // Muse Spark tool calling (dev.meta.ai/docs/tool-calling, Chat Completions format):
+  // the model picks at most one function per turn (parallel_tool_calls: false) and
+  // tool_choice must be "auto". Returns the assistant message, including tool_calls.
+  async chatWithTools(messages, tools) {
+    const json = await this.post('/chat/completions', {
+      model: this.cfg.agentModel ?? this.cfg.visionModel,
+      messages,
+      tools,
+      tool_choice: 'auto',
+      parallel_tool_calls: false,
+    });
+    const msg = json?.choices?.[0]?.message;
+    if (!msg || typeof msg !== 'object') throw new Error('Meta API /chat/completions returned no message');
+    return msg;
+  }
 }
 
 const backoff = (attempt) => 500 * 2 ** attempt;
