@@ -31,6 +31,9 @@ async function api(path, body) {
 let toastTimer;
 function toast(msg, err = false) {
   const t = $('#toast');
+  // Errors interrupt screen readers (alert); confirmations are announced politely.
+  t.setAttribute('role', err ? 'alert' : 'status');
+  t.setAttribute('aria-live', err ? 'assertive' : 'polite');
   t.textContent = msg; t.className = `show${err ? ' err' : ''}`;
   clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.className = ''; }, err ? 6000 : 3000);
 }
@@ -86,14 +89,20 @@ let state = { status: null, lastScan: null };
 async function viewScan(root) {
   const st = state.status;
   const mode = h('select', { 'aria-label': 'Photo type' }, h('option', { value: 'shelf' }, 'Shelf photo (audit expiry)'), h('option', { value: 'delivery' }, 'Delivery carton (receive stock)'));
-  const result = h('div');
+  const result = h('div', { 'aria-live': 'polite', 'aria-busy': 'false' });
   const run = guard(async (body) => {
-    result.replaceChildren(h('p', { class: 'muted' }, 'Detecting packs with SAM 3.1, reading labels with Muse Spark...'));
-    state.lastScan = await api('/api/scan', { mode: mode.value, ...body });
-    await renderScan(result, state.lastScan);
+    result.replaceChildren(h('p', { class: 'muted', role: 'status' }, 'Detecting packs with SAM 3.1, reading labels with Muse Spark...'));
+    result.setAttribute('aria-busy', 'true');
+    try {
+      state.lastScan = await api('/api/scan', { mode: mode.value, ...body });
+      await renderScan(result, state.lastScan);
+    } catch (e) {
+      result.replaceChildren(h('p', { class: 'card', role: 'alert' }, `Scan failed: ${e.message}`));
+      throw e;
+    } finally { result.setAttribute('aria-busy', 'false'); }
     refreshCounts();
   });
-  const file = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp' });
+  const file = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Choose a shelf or delivery photo to scan' });
   const upload = (f) => {
     if (!f) return;
     const rd = new FileReader();
@@ -208,7 +217,7 @@ async function viewApprove(root) {
     nameField(sync)));
   if (!waiting.length) root.append(h('p', { class: 'empty' }, 'Nothing waiting. Scan a photo or resolve a review item to propose changes.'));
   for (const c of waiting) {
-    const reason = h('input', { type: 'text', placeholder: 'reason (optional)', size: 20 });
+    const reason = h('input', { type: 'text', placeholder: 'reason (optional)', size: 20, 'aria-label': `Reason for rejecting ${c.id} (optional)` });
     const ok = h('button', { class: 'primary', onclick: guard(async () => { const r = await api(`/api/changesets/${c.id}/approve`, { by: getName() }); toast(`${r.id} approved by ${r.approvedBy}; stock updated`); route(); }) }, `Approve as ${getName() || '...'}`);
     const no = h('button', { class: 'danger', onclick: guard(async () => { await api(`/api/changesets/${c.id}/reject`, { by: getName(), reason: reason.value }); toast(`${c.id} rejected`); route(); }) }, 'Reject');
     buttons.push(ok, no);
@@ -251,8 +260,8 @@ async function viewInventory(root) {
 }
 
 function askCard() {
-  const q = h('input', { type: 'text', placeholder: 'How many Paracetamol packs do we have?', size: 40 });
-  const out = h('p', { class: 'small' });
+  const q = h('input', { type: 'text', placeholder: 'How many Paracetamol packs do we have?', size: 40, 'aria-label': 'Stock question' });
+  const out = h('p', { class: 'small', role: 'status', 'aria-live': 'polite' });
   const go = guard(async () => { const r = await api('/api/ask', { question: q.value }); out.textContent = r.answer; out.style.color = r.refused ? 'var(--exp)' : ''; });
   q.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
   return h('div', { class: 'card' }, h('h2', {}, 'Stock question'), h('p', { class: 'small muted' }, 'Stock counts only. Clinical and substitution questions are refused.'), h('div', { class: 'row' }, q, h('button', { onclick: go }, 'Ask')), out);
@@ -281,13 +290,19 @@ async function refreshCounts() {
   $('#n-approve').textContent = cs.filter((c) => c.status === 'awaiting_pharmacist_approval').length || '';
 }
 
-async function route() {
+async function route(focusView = false) {
   const name = (location.hash.slice(1) || 'scan');
   const view = VIEWS[name] ?? viewScan;
-  document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('active', a.getAttribute('href') === `#${name}`));
+  document.querySelectorAll('nav a').forEach((a) => {
+    const on = a.getAttribute('href') === `#${name}`;
+    a.classList.toggle('active', on);
+    if (on) { a.setAttribute('aria-current', 'page'); document.title = `${a.textContent.replace(/\s*\d+\s*$/, '').replace(/^\d+ · /, '').trim()} · Pharmacy Stock Agent`; } else a.removeAttribute('aria-current');
+  });
   const root = h('div');
   try { await view(root); } catch (e) { root.append(h('p', { class: 'card' }, `Error: ${e.message}`)); }
   $('#view').replaceChildren(root);
+  // Move keyboard and screen-reader focus to the new view after in-app navigation.
+  if (focusView) $('#view').focus({ preventScroll: false });
   refreshCounts().catch(() => {});
 }
 
@@ -301,7 +316,7 @@ async function init() {
     if (!confirm('Reset stock, review queue, approvals and audit log to the synthetic seed?')) return;
     await api('/api/reset', {}); state.lastScan = null; toast('Demo data reset'); location.hash = '#scan'; route();
   }));
-  window.addEventListener('hashchange', route);
+  window.addEventListener('hashchange', () => route(true));
   route();
 }
 init().catch((e) => toast(e.message, true));

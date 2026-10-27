@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <a class="skip" href="#view">Skip to main content</a>
   <header>
     <div class="brand">
       <h1>Pharmacy Stock Agent</h1>
@@ -15,20 +16,20 @@
     </div>
     <div id="status" class="status" aria-live="polite"></div>
   </header>
-  <div class="banner">SYNTHETIC DEMO DATA: fictional pharmacy, products, makers, suppliers and lots.</div>
-  <nav>
+  <div class="banner" role="note">SYNTHETIC DEMO DATA: fictional pharmacy, products, makers, suppliers and lots.</div>
+  <nav aria-label="Workflow steps">
     <a href="#scan">1 · Scan photo</a>
-    <a href="#review">2 · Review queue <span id="n-review" class="count"></span></a>
-    <a href="#approve">3 · Approvals <span id="n-approve" class="count"></span></a>
+    <a href="#review">2 · Review queue <span id="n-review" class="count" aria-label="open items"></span></a>
+    <a href="#approve">3 · Approvals <span id="n-approve" class="count" aria-label="waiting"></span></a>
     <a href="#inventory">4 · Inventory &amp; expiry</a>
     <a href="#restock">5 · Restock draft</a>
   </nav>
-  <main id="view"></main>
+  <main id="view" tabindex="-1" aria-live="polite"></main>
   <footer>
     Built for the Meta Global AI Developer Hackathon (Oct 26 to Nov 4, 2026). SAM 3.1 finds packs, Muse Spark reads labels.
     The default provider replays recorded synthetic results offline. <button id="reset" class="link">Reset demo data</button>
   </footer>
-  <div id="toast" role="status"></div>
+  <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
   <script type="module" src="/app.js"></script>
 </body>
 </html>
