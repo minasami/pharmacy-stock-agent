@@ -1,4 +1,20 @@
+# Dependencies (none today, but never commit them)
 node_modules/
+
+# Secrets: any .env file except the documented template
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local runtime data and outputs
 state/
 out/
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
