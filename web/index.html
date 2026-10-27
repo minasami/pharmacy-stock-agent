@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pharmacy Stock Agent</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>Pharmacy Stock Agent</h1>
+      <p class="sub">Stock, expiry and restock drafts only. No clinical or substitution advice. A pharmacist approves every change.</p>
+    </div>
+    <div id="status" class="status" aria-live="polite"></div>
+  </header>
+  <div class="banner">SYNTHETIC DEMO DATA: fictional pharmacy, products, makers, suppliers and lots.</div>
+  <nav>
+    <a href="#scan">1 · Scan photo</a>
+    <a href="#review">2 · Review queue <span id="n-review" class="count"></span></a>
+    <a href="#approve">3 · Approvals <span id="n-approve" class="count"></span></a>
+    <a href="#inventory">4 · Inventory &amp; expiry</a>
+    <a href="#restock">5 · Restock draft</a>
+  </nav>
+  <main id="view"></main>
+  <footer>
+    Built for the Meta Global AI Developer Hackathon (Oct 27 to Nov 4, 2026). SAM 3.1 finds packs, Muse Spark reads labels.
+    The default provider replays recorded synthetic results offline. <button id="reset" class="link">Reset demo data</button>
+  </footer>
+  <div id="toast" role="status"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
