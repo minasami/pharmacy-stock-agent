@@ -9,7 +9,7 @@ Click **Reset demo data** in the footer. Set the browser zoom so the whole photo
 
 | Time | On screen | Voice-over |
 |---|---|---|
-| 0:00 to 0:15 | Title card, then `BUILT_DURING_EVENT.md` and `git log` (ET dates) | "Pharmacy Stock Agent. Everything you'll see was built during the Meta hackathon, starting Oct 27. Here is the commit log." |
+| 0:00 to 0:15 | Title card, then `BUILT_DURING_EVENT.md` and `git log` (ET dates) | "Pharmacy Stock Agent. Everything you'll see was built during the Meta hackathon, after the Oct 26 kickoff. Here is the commit log." |
 | 0:15 to 0:30 | Header and synthetic-data banner | "Pharmacies lose money and time to expired stock and manual counts. Our agent turns a phone photo into stock updates, but only for stock. It never gives clinical or substitution advice, and a pharmacist approves every change. All data here is synthetic." |
 | 0:30 to 1:05 | **Scan photo**: drag in `shelf-01.png`. Boxes appear. Hover a box | "SAM 3.1 finds every pack on the shelf. Muse Spark reads each region's name, strength, lot and expiry into a strict JSON schema. Green is fine, orange is near expiry, red is expired. Purple dashed means the agent isn't sure, so it doesn't guess." |
 | 1:05 to 1:20 | Shelf audit panel: pull list, near expiry, proposed CS-001 | "It found an expired Omeprazole lot and proposed a quarantine. Nothing has changed yet." |

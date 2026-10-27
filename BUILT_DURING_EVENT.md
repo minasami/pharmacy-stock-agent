@@ -1,6 +1,6 @@
 # Built during the event
 
-Meta Global AI Developer Hackathon building period: **Oct 27 to Nov 4, 2026 (ET)**.
+Meta Global AI Developer Hackathon building period: **Oct 26, 2026, 12:00 PM ET (kickoff livestream, 17:00 UTC) to Nov 4, 2026, 9:00 PM ET (submission deadline, Nov 5 02:00 UTC)**, as listed on the event page (cerebralvalley.ai/e/meta-ai-developer-hackathon) and in the organisers' welcome email. The first commit here (`ffc5ded`, Oct 27 02:05 ET) is about 14 hours after kickoff.
 
 Everything in this repository was written during the building period. No code, data or assets were carried in from before the event. The git history is the record. Each commit's timestamp is listed below in ET (the event's zone) and in the author's local time (UTC+3, Cairo). Check it with:
 
@@ -8,7 +8,7 @@ Everything in this repository was written during the building period. No code, d
 TZ=America/New_York git log --reverse --format='%h %ad %s' --date=format-local:'%Y-%m-%d %H:%M %Z'
 ```
 
-## Oct 27, 2026 (day 1)
+## Oct 27, 2026 (ET)
 
 ### Core agent and CLI
 | Commit | ET | UTC+3 | What |

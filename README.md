@@ -1,6 +1,6 @@
 # Pharmacy Stock Agent
 
-Built for the Meta Global AI Developer Hackathon (building period from Oct 27, 2026). Every commit in this repo was made during the event. See `BUILT_DURING_EVENT.md`.
+Built for the Meta Global AI Developer Hackathon (Oct 26, 12:00 PM ET kickoff to Nov 4, 9:00 PM ET, 2026). Every commit in this repo was made during the event. See `BUILT_DURING_EVENT.md`.
 
 A pharmacist photographs a shelf or an opened delivery carton. The agent:
 
