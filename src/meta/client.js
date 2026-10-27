@@ -66,7 +66,10 @@ export class MetaClient {
   async segment(imagePath, phrase = 'medicine box') {
     const json = await this.post('/responses', {
       model: this.cfg.samModel,
+      // Shape from dev.meta.ai/docs/sam/overview: one user message with a short
+      // noun phrase and one image part. Non-streaming returns the full result.
       input: [{
+        type: 'message',
         role: 'user',
         content: [
           { type: 'input_text', text: phrase },

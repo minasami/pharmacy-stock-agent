@@ -68,6 +68,12 @@ test('meta provider calls SAM 3.1 then Muse Spark with the right shape (fake fet
   const reads = await p.readPacks('samples/shelf-01.png', boxes);
   assert.equal(calls[0].body.model, 'sam-3.1');
   assert.equal(calls[1].body.model, 'muse-spark-1.3');
+  const sam = calls[0].body.input[0];
+  assert.deepEqual([sam.type, sam.role, sam.content.map((c) => c.type)], ['message', 'user', ['input_text', 'input_image']]);
+  assert.equal(sam.content[0].text, 'medicine box');
+  assert.match(sam.content[1].image_url, /^data:image\/png;base64,/);
+  assert.ok(calls[0].url.endsWith('/v1/responses') && calls[1].url.endsWith('/v1/chat/completions'));
+  assert.equal(calls[1].body.response_format.type, 'json_schema');
   assert.equal(calls[0].auth, 'Bearer LLM_test');
   assert.equal(reads.length, 2);
   assert.equal(reads[1].confidence, 0, 'missing region becomes unreadable, not guessed');
