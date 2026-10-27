@@ -58,3 +58,6 @@ pre.draft { white-space: pre-wrap; background: #fbfbfb; border: 1px solid var(--
 main:focus { outline: none; }
 nav a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #174ea6; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
+textarea { font: inherit; width: 100%; margin: 4px 0 12px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; resize: vertical; }
+label.check { flex-direction: row; align-items: center; gap: 4px; color: var(--ink); font-size: 14px; }
+ol.trace { padding-left: 22px; } ol.trace li { margin: 4px 0; } ol.trace li.err { color: var(--exp); }

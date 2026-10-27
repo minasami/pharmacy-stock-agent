@@ -14,6 +14,9 @@ import { ReplayMissError } from '../providers/mock.js';
 import { Store } from '../inventory/store.js';
 import { today, parseExpiry, expiryStatus, daysUntil } from '../inventory/expiry.js';
 import { shelfAudit, deliveryIntake, expiryReport, draftRestock, queueReviews } from '../agent/workflows.js';
+import { runAgent, MAX_STEPS_LIMIT } from '../agent/loop.js';
+import { getPlanner } from '../agent/planners.js';
+import { ToolError } from '../agent/tools.js';
 import { formatRestock } from '../agent/format.js';
 import { answerStockQuestion } from '../agent/ask.js';
 
@@ -52,6 +55,7 @@ export function createApp(opts = {}) {
   const cfg = opts.cfg ?? loadConfig();
   const store = opts.store ?? new Store(process.env.STOCK_STATE_DIR || undefined);
   const provider = opts.provider ?? getProvider(cfg);
+  const planner = () => opts.planner ?? getPlanner(cfg);
   const asOf = () => opts.asOf ?? process.env.AS_OF ?? today();
   const nearDays = cfg.nearExpiryDays;
   const uploads = join(store.dir, 'uploads');
@@ -124,6 +128,30 @@ export function createApp(opts = {}) {
     };
   }
 
+  // Agent run: the planner chooses the steps (tool calling); every stock change it
+  // makes is a proposal that still needs a named pharmacist on the Approvals page.
+  async function agent(body) {
+    const goal = String(body.goal ?? '').trim();
+    if (!goal) throw new HttpError(400, 'Type what the agent should do, e.g. "Morning check: audit the shelf and draft the reorder".');
+    const inputs = [...(Array.isArray(body.samples) ? body.samples.map((sample) => ({ sample })) : []), ...(Array.isArray(body.images) ? body.images.map((image) => ({ image })) : [])];
+    if (inputs.length > 4) throw new HttpError(400, 'Attach at most 4 photos.');
+    const photos = [];
+    for (const [i, input] of inputs.entries()) {
+      const img = await resolveImage(input);
+      photos.push({ id: `photo-${i + 1}`, path: img.path, url: img.url, label: img.label });
+    }
+    const maxSteps = body.maxSteps === undefined ? undefined : Number(body.maxSteps);
+    if (maxSteps !== undefined && !(Number.isInteger(maxSteps) && maxSteps >= 1 && maxSteps <= MAX_STEPS_LIMIT)) throw new HttpError(400, `maxSteps must be 1 to ${MAX_STEPS_LIMIT}.`);
+    const ctx = { provider, catalog: await store.catalog(), store, asOf: asOf(), nearDays };
+    try {
+      return await runAgent({ goal, photos, ctx, planner: planner(), maxSteps });
+    } catch (e) {
+      if (e instanceof ToolError) throw new HttpError(400, e.message);
+      if (/^Meta API /.test(e.message ?? '')) throw new HttpError(502, `The planning model call failed. Nothing was approved; any change sets already proposed are still waiting on the Approvals page. ${e.message}`);
+      throw e;
+    }
+  }
+
   // Pharmacist identifies an unclear pack by choosing what is printed on it.
   // No catalog item is pre-selected: the agent never maps a doubtful read to a product.
   async function resolveReview(id, body) {
@@ -174,9 +202,10 @@ export function createApp(opts = {}) {
     let m;
     if (route === 'GET /api/status') {
       const inv = await store.inventory();
-      return { provider: provider.name, asOf: asOf(), nearDays, pharmacy: inv.pharmacy, synthetic: true, samples: await samples() };
+      return { provider: provider.name, planner: planner().name, asOf: asOf(), nearDays, pharmacy: inv.pharmacy, synthetic: true, samples: await samples() };
     }
     if (route === 'POST /api/scan') return scan(await readBody(req));
+    if (route === 'POST /api/agent') return agent(await readBody(req));
     if (route === 'GET /api/catalog') return (await store.catalog()).items.map(({ sku, name, strength, pack_size }) => ({ sku, name, strength, pack_size }));
     if (route === 'GET /api/review') return store.reviews();
     if (method === 'POST' && (m = path.match(/^\/api\/review\/(RV-\d{3,})\/resolve$/))) return resolveReview(m[1], await readBody(req));

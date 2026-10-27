@@ -281,8 +281,76 @@ async function viewRestock(root) {
     h('button', { onclick: download }, 'Download draft (.txt)')));
 }
 
+// ---- agent run: the model chooses the steps, the pharmacist still approves ----
+const TOOL_LABEL = { shelf_audit: 'Shelf audit', delivery_intake: 'Delivery intake', expiry_flags: 'Expiry flags', restock_draft: 'Restock draft', request_human_review: 'Hand to pharmacist' };
+async function viewAgent(root) {
+  const st = state.status;
+  const goal = h('textarea', { rows: 2, maxlength: 500, 'aria-label': 'What should the agent do?', placeholder: 'e.g. Morning check: audit the shelf, receive the delivery and draft the reorder' });
+  goal.value = state.agentGoal ?? 'Morning check: audit the shelf, receive the delivery and draft the reorder';
+  const picks = st.samples.filter((f) => /\.(png|jpe?g|webp)$/i.test(f)).map((f) => {
+    const box = h('input', { type: 'checkbox', value: f, checked: true });
+    return { f, box, el: h('label', { class: 'check' }, box, ` ${f}`) };
+  });
+  const file = h('input', { type: 'file', multiple: true, accept: 'image/png,image/jpeg,image/webp', 'aria-label': 'Add your own photos for the agent' });
+  const steps = h('select', { 'aria-label': 'Maximum agent steps' }, ...[3, 4, 6, 8, 10].map((n) => h('option', { value: n, selected: n === 6 }, `max ${n} steps`)));
+  const out = h('div', { 'aria-live': 'polite', 'aria-busy': 'false' });
+  const readFile = (f) => new Promise((ok, fail) => { const rd = new FileReader(); rd.onload = () => ok(rd.result); rd.onerror = () => fail(new Error('Could not read the photo')); rd.readAsDataURL(f); });
+  const go = guard(async () => {
+    state.agentGoal = goal.value;
+    out.replaceChildren(h('p', { class: 'muted', role: 'status' }, 'The agent is choosing and running steps...'));
+    out.setAttribute('aria-busy', 'true');
+    try {
+      const images = await Promise.all([...file.files].map(readFile));
+      state.lastAgent = await api('/api/agent', { goal: goal.value, samples: picks.filter((p) => p.box.checked).map((p) => p.f), images, maxSteps: Number(steps.value) });
+      renderAgent(out, state.lastAgent);
+    } catch (e) {
+      out.replaceChildren(h('p', { class: 'card', role: 'alert' }, `Agent run failed: ${e.message}`));
+      throw e;
+    } finally { out.setAttribute('aria-busy', 'false'); }
+    refreshCounts();
+  });
+  root.append(
+    h('div', { class: 'card' },
+      h('h2', {}, 'Agent run'),
+      h('p', {}, 'Say what you need. The agent picks its own steps from five tools (shelf audit, delivery intake, expiry flags, restock draft, hand to pharmacist), one at a time, up to the step limit. It can only propose stock changes; you approve them on the Approvals page.'),
+      goal,
+      h('div', { class: 'row' }, ...picks.map((p) => p.el), file, steps, h('button', { class: 'primary', onclick: go }, 'Run agent')),
+      h('p', { class: 'small muted' }, st.planner?.startsWith('meta')
+        ? `Live mode: ${st.planner} chooses each step through tool calling on the Meta Model API.`
+        : 'Offline mode (default): a deterministic mock planner simulates the model\u2019s tool choices from your request and the photo names, so the demo runs without a key. It is not a model.')),
+    out);
+  if (state.lastAgent) renderAgent(out, state.lastAgent);
+}
+
+function renderAgent(root, r) {
+  if (r.refused) { root.replaceChildren(h('div', { class: 'card', role: 'alert' }, h('p', {}, r.answer))); return; }
+  const outcome = (s) => {
+    if (!s.ok) return `Error: ${s.error}`;
+    const x = s.result;
+    if (x.proposed_change_set || x.packs_detected !== undefined) {
+      return [`${x.packs_detected} packs.`, x.proposed_change_set ? ` Proposed ${x.proposed_change_set.id}, awaiting approval.` : ' No change proposed.', x.sent_to_review_queue.length ? ` Review queue: ${x.sent_to_review_queue.join(', ')}.` : ''].join('');
+    }
+    if (s.tool === 'expiry_flags') return `${x.expired.length} expired, ${x.near_expiry.length} near expiry.`;
+    if (s.tool === 'restock_draft') return `${x.lines.length} draft line(s). Nothing sent.`;
+    if (s.tool === 'request_human_review') return `Note for you: ${x.note}`;
+    return 'Done.';
+  };
+  const args = (a) => (a && Object.keys(a).length ? ` (${Object.values(a).join(', ')})` : '');
+  root.replaceChildren(h('div', { class: 'card' },
+    h('h3', {}, `Steps chosen by ${r.planner === 'mock' ? 'the offline mock planner' : r.planner} (${r.steps.length} of max ${r.maxSteps})`),
+    h('ol', { class: 'trace' }, ...r.steps.map((s) => h('li', { class: s.ok ? '' : 'err' }, h('b', {}, TOOL_LABEL[s.tool] ?? s.tool), args(s.args), ': ', outcome(s)))),
+    h('p', {}, h('b', {}, 'Stopped: '), r.stoppedReason.replaceAll('_', ' ')),
+    r.answer ? h('p', {}, h('b', {}, 'Agent: '), r.answer) : null,
+    r.handoff ? h('p', { role: 'note' }, h('b', {}, 'Handed to you: '), r.handoff.note) : null,
+    h('p', {}, r.pendingApproval
+      ? ['Nothing in stock changed yet. ', h('a', { href: '#approve' }, `Review and approve ${r.changeSets.map((c) => c.id).join(', ')}`)]
+      : 'No stock changes proposed.'),
+    r.reviews.length ? h('p', {}, h('a', { href: '#review' }, `Open the review queue (${r.reviews.length} unclear pack(s))`)) : null,
+    r.restockDraft ? h('p', {}, h('a', { href: '#restock' }, 'Open the restock draft')) : null));
+}
+
 // ---- shell ----
-const VIEWS = { scan: viewScan, review: viewReview, approve: viewApprove, inventory: viewInventory, restock: viewRestock };
+const VIEWS = { agent: viewAgent, scan: viewScan, review: viewReview, approve: viewApprove, inventory: viewInventory, restock: viewRestock };
 
 async function refreshCounts() {
   const [rv, cs] = await Promise.all([api('/api/review'), api('/api/changesets')]);
