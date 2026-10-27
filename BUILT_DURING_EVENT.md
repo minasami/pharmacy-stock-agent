@@ -42,7 +42,11 @@ TZ=America/New_York git log --reverse --format='%h %ad %s' --date=format-local:'
 | `9c36af8` | 09:41 | 16:41 | Web server: model failures return 502 with no state change, clear port-in-use message (2 tests) |
 | `5d7cab7` | 09:42 | 16:42 | Web UI accessibility: skip link, `aria-current`, focus management, error alerts, labelled inputs, focus rings, AA contrast (3 tests) |
 | `5b16d57` | 09:43 | 16:43 | README: setup and run steps, documented mock vs live provider switch |
-| *(this commit)* | | | This log updated, demo script test count (29 tests in total) |
+| `59f8090` | 09:43 | 16:43 | This log updated, demo script test count (29 tests in total) |
+| `0237e0f` | 09:53 | 16:53 | `.gitignore` covers every `.env` variant except `.env.example`, key files, logs |
+| `f0bc8d9` | 09:53 | 16:53 | Catalog makers renamed to placeholders (Maker A/B/C) so none resembles a real company |
+| `b0dace0` | 09:54 | 16:54 | Demo script leads with the agent loop and the approval gate, with honest offline/live wording |
+| *(this commit)* | | | This log updated |
 
 ## What the demo video shows was built during the event
 All of it: the photo-to-stock pipeline, the review queue, approve-by-name with the audit log, the expiry flags, the restock draft, and the clinical-question refusal. The video opens on this file and the `git log` above.
