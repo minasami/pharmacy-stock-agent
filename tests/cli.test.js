@@ -34,3 +34,12 @@ test('cli: valid commands still work on the replay provider', () => {
   assert.match(r.stdout, /Shelf audit \(mock, as of 2026-10-27\): 9 packs detected/);
   assert.equal(run('frobnicate').status, 1);
 });
+
+test('cli: replay provider explains that it only knows the bundled samples', () => {
+  const copy = join(state, 'my-shelf.png');
+  spawnSync('cp', ['samples/shelf-01.png', copy]);
+  const r = run('shelf', copy);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /offline replay provider has no recorded result/);
+  assert.match(r.stderr, /MODEL_PROVIDER=meta/);
+});
