@@ -16,16 +16,57 @@ A pharmacist photographs a shelf or an opened delivery carton. The agent:
 - **No clinical or substitution advice.** The schema has no fields for uses, doses or alternatives. A deterministic guard (`src/safety/guard.js`, English and Arabic patterns) refuses such questions and blocks any draft that drifts into them. A poor match is never mapped to a "close" product.
 - A pharmacist approves every stock change and every order.
 
-## Run it
-Requires Node 20 or later. There are no npm dependencies.
+## Setup and run
+Requires **Node.js 20 or later** (`node --version`). There are no npm dependencies, so there is nothing to install. Python 3 with Pillow is only needed to regenerate the sample photos (`npm run samples`).
 
 ```bash
-npm test          # 14 tests
-npm run check     # build check: JS syntax, JSON data, zero dependencies
-npm run demo      # end-to-end CLI run on synthetic photos with the offline replay (mock) provider
-npm run web       # web UI on http://127.0.0.1:8787 (set AS_OF=2026-10-27 for the demo date)
-node src/cli.js   # usage
+git clone <this repo> pharmacy-stock-agent && cd pharmacy-stock-agent
+npm test                      # 29 tests, all offline
+npm run check                 # build check: JS syntax, JSON data, zero dependencies
+npm run demo                  # end-to-end CLI run on the synthetic photos (replay provider)
+AS_OF=2026-10-27 npm run web  # web UI on http://127.0.0.1:8787
 ```
+
+`AS_OF` pins "today" so the expiry flags in the demo match the recorded sample photos. Without it the real date is used. `PORT` and `HOST` change where the web UI listens (default `127.0.0.1:8787`, local only). Stock, review queue, approvals and the audit log are kept in `state/` (git-ignored); set `STOCK_STATE_DIR` to use another folder, or click **Reset demo data** in the footer.
+
+### CLI
+```bash
+node src/cli.js reset
+node src/cli.js shelf samples/shelf-01.png --as-of 2026-10-27
+node src/cli.js delivery samples/delivery-01.png --as-of 2026-10-27
+node src/cli.js pending
+node src/cli.js approve CS-001 --by "Demo Pharmacist"
+node src/cli.js expiry --as-of 2026-10-27
+node src/cli.js restock --as-of 2026-10-27 --json
+node src/cli.js ask "how many Paracetamol packs do we have?"
+```
+Bad input (missing photo, unknown file type, malformed change set id or date) prints the reason and the usage with exit code 2. Configuration errors also exit with code 2.
+
+## Mock vs live provider
+The provider is chosen once at startup from the environment. The CLI, the web UI header and the server log all show which one is active.
+
+| | `MODEL_PROVIDER=mock` (default) | `MODEL_PROVIDER=meta` (live) |
+|---|---|---|
+| What it does | Replays the recorded result (`samples/*.truth.json`) for each bundled synthetic photo | Sends the photo to the Meta Model API: SAM 3.1 finds the packs, Muse Spark reads them |
+| Needs | Nothing: no key, no network | `MODEL_API_KEY` (starts with `LLM_`) and API credits |
+| Photos it accepts | Only photos with a recorded `.truth.json` sidecar (the bundled samples); others get a clear "no recorded result" error | Any PNG, JPEG or WebP |
+| Cost | Free | Billed per call against your Meta credits |
+| Status | Used by all tests and the demo | Request shape tested with a fake `fetch`; **not yet run against the live API** |
+
+Rules:
+- `MODEL_PROVIDER` unset: live only if `MODEL_API_KEY` is set, otherwise mock.
+- `MODEL_PROVIDER=mock` always wins, even when a key is set.
+- `MODEL_PROVIDER=meta` without a key, or any other value, stops at startup with a clear message. It never falls back silently.
+
+```bash
+cp .env.example .env              # for reference; the app reads the real environment, not .env
+export MODEL_PROVIDER=meta
+export MODEL_API_KEY="LLM_..."    # never commit it; .env is git-ignored
+AS_OF=2026-10-27 npm run web
+```
+Optional: `META_BASE_URL`, `META_SAM_MODEL` (default `sam-3.1`), `META_VISION_MODEL` (default `muse-spark-1.3`), `META_TIMEOUT_MS` (default 60000), `NEAR_EXPIRY_DAYS` (default 90).
+
+Live calls time out after `META_TIMEOUT_MS` and are retried twice on HTTP 429 or 5xx, honouring `Retry-After`. A 401 or 403 is not retried and suggests checking the key and billing. The key is redacted from every error message. If a live call fails in the web UI, the scan returns HTTP 502 with the reason and no stock, review or approval state is changed.
 
 ## Web UI
 `npm run web` serves a small UI built on `node:http` with plain HTML, CSS and JS. There is no framework and no build step. It binds to 127.0.0.1. It has five views:
@@ -37,13 +78,13 @@ node src/cli.js   # usage
 
 Under the offline replay provider, uploads must be byte-identical copies of the bundled sample photos, because results are replayed from their sidecar files. Live mode reads any photo.
 
-To use the live Meta Model API, set `MODEL_API_KEY` (see `.env.example`). The default is `MODEL_PROVIDER=mock`, which replays the sample sidecar files so the demo runs without a key.
+See [Mock vs live provider](#mock-vs-live-provider) to switch to the live Meta Model API.
 
 ## Meta Model API usage
-- Base URL `https://api.meta.ai/v1` with a Bearer key.
-- `POST /responses` to `sam-3.1`, sending `input_text` (noun phrase) and `input_image`. The output is box tokens (`<|box;x1=..;y1=..;x2=..;y2=..|>`), parsed in `src/meta/sam.js`.
+- Base URL `https://api.meta.ai/v1` with a Bearer key ([authentication docs](https://dev.meta.ai/docs/authentication)).
+- `POST /responses` to `sam-3.1`, sending one user `message` with `input_text` (noun phrase) and `input_image`, as in the [SAM docs](https://dev.meta.ai/docs/sam/overview). The output is box tokens (`<|box;x1=..;y1=..;x2=..;y2=..|>`), parsed in `src/meta/sam.js`.
 - `POST /chat/completions` to `muse-spark-1.3`, with an `image_url` data URL and `response_format: json_schema`.
-- **Not yet verified against the live API, because no key was available on day 1:** the exact non-streaming envelope of the SAM response, and whether the JSON schema is honoured for vision. The code tolerates the common shapes.
+- **Not yet verified against the live API, because no key was available yet:** the exact non-streaming envelope of the SAM response, and whether the JSON schema is honoured for vision. The code tolerates the common shapes.
 
 ## Layout
 `src/meta` API client and SAM parser · `src/providers` mock and meta · `src/inventory` expiry, matching, approval-gated store · `src/agent` scan, workflows, formatting · `src/safety` guard · `src/web` web server · `web` browser UI · `data` synthetic catalog and seed stock · `samples` synthetic photos · `tests`.
