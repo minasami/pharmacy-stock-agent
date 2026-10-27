@@ -1,0 +1,13 @@
+{
+  "_note": "SYNTHETIC catalog for demo only. Makers are fictional; barcodes use the reserved 200- prefix (in-store range) and match no real product.",
+  "items": [
+    {"sku": "SYN-001", "barcode": "2000000000017", "name": "Paracetamol", "strength": "500 mg", "form": "tablet", "pack_size": 20, "maker": "Nilevale Labs (fictional)", "par_level": 30, "reorder_point": 12, "supplier": "Supplier A (fictional)"},
+    {"sku": "SYN-002", "barcode": "2000000000024", "name": "Ibuprofen", "strength": "400 mg", "form": "tablet", "pack_size": 24, "maker": "Nilevale Labs (fictional)", "par_level": 20, "reorder_point": 8, "supplier": "Supplier A (fictional)"},
+    {"sku": "SYN-003", "barcode": "2000000000031", "name": "Amoxicillin", "strength": "500 mg", "form": "capsule", "pack_size": 16, "maker": "Oasis Pharma (fictional)", "par_level": 15, "reorder_point": 6, "supplier": "Supplier B (fictional)"},
+    {"sku": "SYN-004", "barcode": "2000000000048", "name": "Cetirizine", "strength": "10 mg", "form": "tablet", "pack_size": 10, "maker": "Oasis Pharma (fictional)", "par_level": 18, "reorder_point": 6, "supplier": "Supplier B (fictional)"},
+    {"sku": "SYN-005", "barcode": "2000000000055", "name": "Omeprazole", "strength": "20 mg", "form": "capsule", "pack_size": 14, "maker": "Delta Generics (fictional)", "par_level": 20, "reorder_point": 8, "supplier": "Supplier A (fictional)"},
+    {"sku": "SYN-006", "barcode": "2000000000062", "name": "Metformin", "strength": "500 mg", "form": "tablet", "pack_size": 30, "maker": "Delta Generics (fictional)", "par_level": 25, "reorder_point": 10, "supplier": "Supplier C (fictional)"},
+    {"sku": "SYN-007", "barcode": "2000000000079", "name": "Oral rehydration salts", "strength": "sachet", "form": "powder", "pack_size": 10, "maker": "Nilevale Labs (fictional)", "par_level": 30, "reorder_point": 10, "supplier": "Supplier C (fictional)"},
+    {"sku": "SYN-008", "barcode": "2000000000086", "name": "Loratadine", "strength": "10 mg", "form": "tablet", "pack_size": 10, "maker": "Oasis Pharma (fictional)", "par_level": 12, "reorder_point": 5, "supplier": "Supplier B (fictional)"}
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "_note": "SYNTHETIC starting stock for a fictional pharmacy ('Demo Pharmacy'). Quantities are packs. Each lot has its own expiry.",
+  "pharmacy": "Demo Pharmacy (fictional)",
+  "lots": [
+    {"sku": "SYN-001", "lot": "NL2405A", "expiry": "2027-09-30", "qty": 14},
+    {"sku": "SYN-001", "lot": "NL2311C", "expiry": "2026-12-31", "qty": 4},
+    {"sku": "SYN-002", "lot": "NL2402B", "expiry": "2027-03-31", "qty": 9},
+    {"sku": "SYN-003", "lot": "OP2309K", "expiry": "2026-10-31", "qty": 5},
+    {"sku": "SYN-003", "lot": "OP2406M", "expiry": "2027-12-31", "qty": 3},
+    {"sku": "SYN-004", "lot": "OP2401D", "expiry": "2028-01-31", "qty": 11},
+    {"sku": "SYN-005", "lot": "DG2308F", "expiry": "2026-09-30", "qty": 2},
+    {"sku": "SYN-005", "lot": "DG2404G", "expiry": "2027-06-30", "qty": 6},
+    {"sku": "SYN-006", "lot": "DG2403H", "expiry": "2027-11-30", "qty": 18},
+    {"sku": "SYN-007", "lot": "NL2312R", "expiry": "2027-01-31", "qty": 7},
+    {"sku": "SYN-008", "lot": "OP2405L", "expiry": "2027-08-31", "qty": 4}
+  ]
+}

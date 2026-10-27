@@ -1,0 +1,159 @@
+{
+  "image": "shelf-01.png",
+  "synthetic": true,
+  "regions": [
+    {
+      "box": {
+        "x1": 30,
+        "y1": 50,
+        "x2": 250,
+        "y2": 170
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Paracetamol",
+        "strength": "500 mg",
+        "pack_size": 20,
+        "lot": "NL2405A",
+        "expiry": "09/2027",
+        "confidence": 0.93
+      }
+    },
+    {
+      "box": {
+        "x1": 270,
+        "y1": 50,
+        "x2": 490,
+        "y2": 170
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Paracetamol",
+        "strength": "500 mg",
+        "pack_size": 20,
+        "lot": "NL2311C",
+        "expiry": "12/2026",
+        "confidence": 0.93
+      }
+    },
+    {
+      "box": {
+        "x1": 510,
+        "y1": 50,
+        "x2": 730,
+        "y2": 170
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Amoxicillin",
+        "strength": "500 mg",
+        "pack_size": 16,
+        "lot": "OP2309K",
+        "expiry": "10/2026",
+        "confidence": 0.93
+      }
+    },
+    {
+      "box": {
+        "x1": 750,
+        "y1": 50,
+        "x2": 970,
+        "y2": 170
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Omeprazole",
+        "strength": "20 mg",
+        "pack_size": 14,
+        "lot": "DG2308F",
+        "expiry": "09/2026",
+        "confidence": 0.93
+      }
+    },
+    {
+      "box": {
+        "x1": 30,
+        "y1": 190,
+        "x2": 250,
+        "y2": 310
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Cetirizine",
+        "strength": "10 mg",
+        "pack_size": 10,
+        "lot": "OP2401D",
+        "expiry": "01/2028",
+        "confidence": 0.93
+      }
+    },
+    {
+      "box": {
+        "x1": 270,
+        "y1": 190,
+        "x2": 490,
+        "y2": 310
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Ibuprofen",
+        "strength": "400 mg",
+        "pack_size": 24,
+        "lot": "NL2402B",
+        "expiry": "03/2027",
+        "confidence": 0.93
+      }
+    },
+    {
+      "box": {
+        "x1": 510,
+        "y1": 190,
+        "x2": 730,
+        "y2": 310
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Loratadine",
+        "strength": "10 mg",
+        "pack_size": 10,
+        "lot": "OP2405L",
+        "expiry": "08/2027",
+        "confidence": 0.93
+      }
+    },
+    {
+      "box": {
+        "x1": 750,
+        "y1": 190,
+        "x2": 970,
+        "y2": 310
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Metformin",
+        "strength": "500 mg",
+        "pack_size": 30,
+        "lot": "DG2403H",
+        "expiry": "11/2027",
+        "confidence": 0.93
+      }
+    },
+    {
+      "box": {
+        "x1": 30,
+        "y1": 330,
+        "x2": 250,
+        "y2": 450
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Omeprazo?",
+        "strength": "20 mg",
+        "pack_size": 14,
+        "lot": "DG24??G",
+        "expiry": "06/2027",
+        "confidence": 0.41
+      }
+    }
+  ]
+}

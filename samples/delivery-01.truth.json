@@ -1,0 +1,74 @@
+{
+  "image": "delivery-01.png",
+  "synthetic": true,
+  "regions": [
+    {
+      "box": {
+        "x1": 30,
+        "y1": 60,
+        "x2": 250,
+        "y2": 180
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Ibuprofen",
+        "strength": "400 mg",
+        "pack_size": 24,
+        "lot": "NL2409T",
+        "expiry": "08/2028",
+        "confidence": 0.93
+      }
+    },
+    {
+      "box": {
+        "x1": 270,
+        "y1": 60,
+        "x2": 490,
+        "y2": 180
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Ibuprofen",
+        "strength": "400 mg",
+        "pack_size": 24,
+        "lot": "NL2409T",
+        "expiry": "08/2028",
+        "confidence": 0.93
+      }
+    },
+    {
+      "box": {
+        "x1": 510,
+        "y1": 60,
+        "x2": 730,
+        "y2": 180
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Oral rehydration salts",
+        "strength": "sachet",
+        "pack_size": 10,
+        "lot": "NL2408S",
+        "expiry": "05/2028",
+        "confidence": 0.93
+      }
+    },
+    {
+      "box": {
+        "x1": 750,
+        "y1": 60,
+        "x2": 970,
+        "y2": 180
+      },
+      "score": 0.95,
+      "reading": {
+        "name": "Amoxicillin",
+        "strength": "500 mg",
+        "pack_size": 16,
+        "lot": "OP2408N",
+        "expiry": "11/2026",
+        "confidence": 0.93
+      }
+    }
+  ]
+}
