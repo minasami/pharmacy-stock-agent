@@ -1,0 +1,15 @@
+{
+  "name": "pharmacy-stock-agent",
+  "version": "0.1.0",
+  "description": "Photo-driven pharmacy stock agent: reads shelf and delivery photos with SAM 3.1 and Muse Spark, updates inventory, flags expiry, drafts restock orders for pharmacist approval. Synthetic data only.",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "bin": { "stock-agent": "src/cli.js" },
+  "scripts": {
+    "test": "node --test tests/",
+    "demo": "node scripts/demo.js",
+    "samples": "python3 scripts/make_samples.py"
+  }
+}
