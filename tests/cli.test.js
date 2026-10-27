@@ -43,3 +43,21 @@ test('cli: replay provider explains that it only knows the bundled samples', () 
   assert.match(r.stderr, /offline replay provider has no recorded result/);
   assert.match(r.stderr, /MODEL_PROVIDER=meta/);
 });
+
+test('cli: agent command chooses steps, proposes only, and validates its arguments', () => {
+  run('reset');
+  const r = run('agent', 'Morning check: audit the shelf and draft the reorder', '--photo', 'samples/shelf-01.png', '--as-of', '2026-10-27');
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /1\. shelf_audit \{"photo":"photo-1"\} -> proposed CS-\d+ \(awaiting pharmacist approval\)/);
+  assert.match(r.stdout, /2\. restock_draft -> \d+ draft line\(s\), nothing sent/);
+  assert.match(r.stdout, /Stopped: final_answer/);
+  assert.match(r.stdout, /Waiting for approval: CS-\d+/);
+  const j = JSON.parse(run('agent', 'Which lots are expiring?', '--json', '--as-of', '2026-10-27').stdout);
+  assert.deepEqual(j.steps.map((s) => s.tool), ['expiry_flags']);
+  assert.match(run('agent', 'What dose for a child?').stdout, /can.t give clinical/);
+  for (const [args, msg] of [[['agent'], /agent needs a goal/], [['agent', 'x', '--max-steps', '99'], /--max-steps must be/], [['agent', 'x', '--photo', 'nope.png'], /Photo not found/]]) {
+    const e = run(...args);
+    assert.equal(e.status, 2);
+    assert.match(e.stderr, msg);
+  }
+});
