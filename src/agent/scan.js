@@ -22,7 +22,7 @@ export async function scanPhoto(imagePath, { provider, catalog, asOf, nearDays =
       expiryStatus: expiryStatus(expiry, asOf, nearDays),
     };
   });
-  return { image: imagePath, provider: provider.name, asOf, packs };
+  return { image: imagePath, provider: provider.name, detector: provider.detector ?? null, asOf, packs };
 }
 
 // Group confidently identified packs by (sku, lot).

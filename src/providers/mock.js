@@ -20,6 +20,8 @@ async function truth(imagePath) {
 
 export const mockProvider = {
   name: 'mock',
+  detector: 'recorded sample boxes (offline replay)',
+  canReadNewPhotos: false,
   async detectPacks(imagePath) {
     return (await truth(imagePath)).regions.map((r) => ({ ...r.box, score: r.score }));
   },

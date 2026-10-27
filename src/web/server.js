@@ -87,8 +87,10 @@ export function createApp(opts = {}) {
     const hash = sha(buf);
     const same = sampleHashes.get(hash);
     if (same) return { path: join('samples', same), url: `/samples/${same}`, label: `upload (${same})` };
-    if (provider.name !== 'meta') {
-      throw new HttpError(422, 'The offline replay provider only knows the bundled synthetic sample photos. Upload one of those, or set MODEL_API_KEY to read new photos with SAM 3.1 and Muse Spark.');
+    if (!(provider.canReadNewPhotos ?? provider.name === 'meta')) {
+      throw new HttpError(422, provider.name === 'baseten'
+        ? 'SAM 3.1 is only on the Meta Model API, so with Baseten alone only the bundled synthetic sample photos can be scanned (their recorded boxes are used). Set MODEL_API_KEY as well to detect packs in new photos.'
+        : 'The offline replay provider only knows the bundled synthetic sample photos. Upload one of those, or set MODEL_API_KEY to read new photos with SAM 3.1 and Muse Spark.');
     }
     await mkdir(uploads, { recursive: true });
     const name = `${hash.slice(0, 16)}.${kind}`;
@@ -115,7 +117,7 @@ export function createApp(opts = {}) {
     const byRegion = new Map(reviews.map((rv) => [rv.region, rv.id]));
     const name = (sku) => catalog.items.find((i) => i.sku === sku)?.name ?? null;
     return {
-      mode, provider: provider.name, asOf: asOf(), image: img.url, label: img.label,
+      mode, provider: provider.name, detector: r.scan.detector ?? provider.detector ?? null, asOf: asOf(), image: img.url, label: img.label,
       packs: r.scan.packs.map((p) => ({
         region: p.region, box: p.box, sku: p.sku, name: name(p.sku), reading: p.reading,
         needsReview: p.needsReview, reviewReasons: p.reviewReasons, reviewId: byRegion.get(p.region) ?? null,
@@ -202,7 +204,7 @@ export function createApp(opts = {}) {
     let m;
     if (route === 'GET /api/status') {
       const inv = await store.inventory();
-      return { provider: provider.name, planner: planner().name, asOf: asOf(), nearDays, pharmacy: inv.pharmacy, synthetic: true, samples: await samples() };
+      return { provider: provider.name, model: provider.model ?? null, detector: provider.detector ?? null, planner: planner().name, asOf: asOf(), nearDays, pharmacy: inv.pharmacy, synthetic: true, samples: await samples() };
     }
     if (route === 'POST /api/scan') return scan(await readBody(req));
     if (route === 'POST /api/agent') return agent(await readBody(req));

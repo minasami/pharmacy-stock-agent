@@ -98,7 +98,7 @@ async function main(argv) {
     case 'shelf': {
       const r = await shelfAudit(photoArg(args[0], 'shelf'), ctx);
       return print(r, [
-        `Shelf audit (${r.scan.provider}, as of ${asOf}): ${r.scan.packs.length} packs detected`,
+        `Shelf audit (${r.scan.provider}, as of ${asOf}): ${r.scan.packs.length} packs detected` + (r.scan.provider === 'baseten' ? `\nPack boxes: ${r.scan.detector}` : ''),
         `Pull now (expired): ${r.pull.map((l) => `${l.sku} lot ${l.lot}`).join(', ') || 'none'}`,
         `Near expiry: ${r.nearExpiry.map((l) => `${l.sku} lot ${l.lot} (${l.expiry})`).join(', ') || 'none'}`,
         `Lots not in system: ${r.unknownLots.map((l) => `${l.sku} lot ${l.lot}`).join(', ') || 'none'}`,
@@ -109,7 +109,7 @@ async function main(argv) {
     case 'delivery': {
       const r = await deliveryIntake(photoArg(args[0], 'delivery'), ctx);
       return print(r, [
-        `Delivery intake (${r.scan.provider}, as of ${asOf}): ${r.scan.packs.length} packs detected`,
+        `Delivery intake (${r.scan.provider}, as of ${asOf}): ${r.scan.packs.length} packs detected` + (r.scan.provider === 'baseten' ? `\nPack boxes: ${r.scan.detector}` : ''),
         `To receive: ${r.received.map((l) => `${l.sku} lot ${l.lot} x${l.count}`).join(', ') || 'none'}`,
         `Flagged, not received (expired/near expiry): ${r.flagged.map((l) => `${l.sku} lot ${l.lot} exp ${l.expiry}`).join(', ') || 'none'}`,
         `Needs a human to read: ${r.review.length}`,

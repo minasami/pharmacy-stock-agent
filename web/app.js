@@ -121,6 +121,8 @@ async function viewScan(root) {
       h('div', { class: 'row' }, mode, ...samples),
       h('p', { class: 'small muted' }, st.provider === 'meta'
         ? 'Live mode: photos are sent to the Meta Model API (sam-3.1 on /responses, muse-spark-1.3 on /chat/completions).'
+        : st.provider === 'baseten'
+        ? `Backup live mode: ${st.model} on Baseten reads the packs. Pack boxes: ${st.detector}.`
         : 'Offline replay mode (default): results for the bundled synthetic photos are replayed from recorded sidecar files. No API key or network needed. Uploading a copy of a sample photo works; other photos need live mode.'),
       drop),
     result);
@@ -143,7 +145,7 @@ async function renderScan(root, r) {
       h('td', {}, p.needsReview ? badge('review', `Review ${p.reviewId ?? ''}`) : badge(p.expiryStatus))))));
   root.replaceChildren(h('div', { class: 'grid' },
     h('div', { class: 'card' }, h('h2', {}, `${r.packs.length} packs detected`), await overlay(r.image, r.packs), legend(),
-      h('p', { class: 'small muted' }, `${r.label} · provider ${r.provider} · as of ${r.asOf}`)),
+      h('p', { class: 'small muted' }, `${r.label} · provider ${r.provider}${r.provider === 'baseten' ? ` · pack boxes: ${r.detector}` : ''} · as of ${r.asOf}`)),
     h('div', { class: 'card' },
       h('h2', {}, r.mode === 'delivery' ? 'Delivery intake' : 'Shelf audit'),
       h('ul', {}, facts, h('li', {}, h('b', {}, 'Sent to review queue: '), `${sm.review} unclear pack(s)`)),
@@ -378,7 +380,7 @@ async function init() {
   state.status = await api('/api/status');
   const st = state.status;
   $('#status').replaceChildren(
-    h('div', {}, 'Provider: ', h('b', {}, st.provider === 'meta' ? 'Meta Model API (live)' : 'offline replay')),
+    h('div', {}, 'Provider: ', h('b', {}, st.provider === 'meta' ? 'Meta Model API (live)' : st.provider === 'baseten' ? 'Baseten Muse Spark Open (live backup)' : 'offline replay')),
     h('div', {}, 'As of ', h('b', {}, st.asOf), ` · ${st.pharmacy}`));
   $('#reset').addEventListener('click', guard(async () => {
     if (!confirm('Reset stock, review queue, approvals and audit log to the synthetic seed?')) return;
