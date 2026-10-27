@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // stock-agent CLI. Runs on the mock provider unless MODEL_API_KEY is set.
-import { loadConfig } from './config.js';
+import { loadConfig, ConfigError } from './config.js';
 import { getProvider } from './providers/index.js';
 import { Store } from './inventory/store.js';
 import { today } from './inventory/expiry.js';
@@ -67,4 +67,7 @@ async function main(argv) {
   }
 }
 
-main(process.argv.slice(2)).catch((e) => { console.error(`Error: ${e.message}`); process.exitCode = 1; });
+main(process.argv.slice(2)).catch((e) => {
+  console.error(e instanceof ConfigError ? `Config error: ${e.message}` : `Error: ${e.message}`);
+  process.exitCode = e instanceof ConfigError ? 2 : 1;
+});

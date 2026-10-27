@@ -8,7 +8,7 @@ import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadConfig } from '../config.js';
+import { loadConfig, providerLabel, ConfigError } from '../config.js';
 import { getProvider } from '../providers/index.js';
 import { Store } from '../inventory/store.js';
 import { today, parseExpiry, expiryStatus, daysUntil } from '../inventory/expiry.js';
@@ -235,8 +235,14 @@ export function startServer({ port = 0, host = '127.0.0.1', ...opts } = {}) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  let cfg;
+  try { cfg = loadConfig(); } catch (e) {
+    if (!(e instanceof ConfigError)) throw e;
+    console.error(`Config error: ${e.message}`);
+    process.exit(2);
+  }
   const port = Number(process.env.PORT || 8787);
-  const server = await startServer({ port, host: process.env.HOST || '127.0.0.1' });
-  const cfg = loadConfig();
-  console.log(`Pharmacy Stock Agent UI on http://${process.env.HOST || '127.0.0.1'}:${server.address().port}  (provider: ${cfg.provider === 'meta' ? 'meta' : 'mock (offline replay)'}, as of ${process.env.AS_OF || today()}, synthetic data)`);
+  const host = process.env.HOST || '127.0.0.1';
+  const server = await startServer({ port, host, cfg });
+  console.log(`Pharmacy Stock Agent UI on http://${host}:${server.address().port}  (provider: ${providerLabel(cfg)}, as of ${process.env.AS_OF || today()}, synthetic data)`);
 }
