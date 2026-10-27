@@ -71,3 +71,11 @@ export function draftRestock(inv, catalog, asOf, nearDays = 90) {
   for (const l of lines) (bySupplier[l.supplier] ??= []).push(l);
   return { status: 'draft_awaiting_pharmacist_approval', asOf, pharmacy: inv.pharmacy, lines, bySupplier };
 }
+
+// Put doubtful packs from a scan in the pharmacist review queue (shared by the web
+// scan endpoint and the agent tools). Returns the new review items.
+export async function queueReviews(store, mode, imageUrl, reviewPacks) {
+  return store.addReviews(reviewPacks.map((p) => ({
+    source: mode, image: imageUrl, region: p.region, box: p.box, reading: p.reading, reasons: p.reviewReasons,
+  })));
+}

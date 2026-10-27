@@ -13,7 +13,7 @@ import { getProvider } from '../providers/index.js';
 import { ReplayMissError } from '../providers/mock.js';
 import { Store } from '../inventory/store.js';
 import { today, parseExpiry, expiryStatus, daysUntil } from '../inventory/expiry.js';
-import { shelfAudit, deliveryIntake, expiryReport, draftRestock } from '../agent/workflows.js';
+import { shelfAudit, deliveryIntake, expiryReport, draftRestock, queueReviews } from '../agent/workflows.js';
 import { formatRestock } from '../agent/format.js';
 import { answerStockQuestion } from '../agent/ask.js';
 
@@ -107,9 +107,7 @@ export function createApp(opts = {}) {
       if (/^Meta API |Model returned no JSON|JSON/.test(e.message ?? '')) throw new HttpError(502, `The vision model call failed, nothing was changed. ${e.message}`);
       throw e;
     }
-    const reviews = await store.addReviews(r.review.map((p) => ({
-      source: mode, image: img.url, region: p.region, box: p.box, reading: p.reading, reasons: p.reviewReasons,
-    })));
+    const reviews = await queueReviews(store, mode, img.url, r.review);
     const byRegion = new Map(reviews.map((rv) => [rv.region, rv.id]));
     const name = (sku) => catalog.items.find((i) => i.sku === sku)?.name ?? null;
     return {
