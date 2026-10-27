@@ -17,6 +17,7 @@ export class Store {
     this.invPath = join(stateDir, 'inventory.json');
     this.pendingPath = join(stateDir, 'pending.json');
     this.logPath = join(stateDir, 'audit-log.json');
+    this.reviewPath = join(stateDir, 'review.json');
   }
 
   async catalog() { return loadJson(join(DATA, 'catalog.json')); }
@@ -31,6 +32,7 @@ export class Store {
     await saveJson(this.invPath, { pharmacy: seed.pharmacy, lots: seed.lots });
     await saveJson(this.pendingPath, []);
     await saveJson(this.logPath, []);
+    await saveJson(this.reviewPath, []);
   }
 
   async pending() { return existsSync(this.pendingPath) ? loadJson(this.pendingPath) : []; }
@@ -58,19 +60,50 @@ export class Store {
     cs.approvedAt = new Date().toISOString();
     await saveJson(this.invPath, inv);
     await saveJson(this.pendingPath, list);
-    const log = existsSync(this.logPath) ? await loadJson(this.logPath) : [];
-    log.push({ at: cs.approvedAt, id, kind: cs.kind, approver, changes: cs.changes?.length ?? 0 });
-    await saveJson(this.logPath, log);
+    await this.log({ at: cs.approvedAt, id, kind: cs.kind, approver, changes: cs.changes?.length ?? 0 });
     return cs;
   }
 
   async reject(id, approver, reason = '') {
+    if (!approver) throw new Error('A pharmacist name is required to reject.');
     const list = await this.pending();
     const cs = list.find((c) => c.id === id);
     if (!cs) throw new Error(`No change set ${id}`);
-    Object.assign(cs, { status: 'rejected', rejectedBy: approver, reason });
+    if (cs.status !== 'awaiting_pharmacist_approval') throw new Error(`${id} is already ${cs.status}`);
+    Object.assign(cs, { status: 'rejected', rejectedBy: approver, rejectedAt: new Date().toISOString(), reason });
     await saveJson(this.pendingPath, list);
+    await this.log({ at: cs.rejectedAt, id, kind: `${cs.kind}_rejected`, approver, changes: 0 });
     return cs;
+  }
+
+  async auditLog() { return existsSync(this.logPath) ? loadJson(this.logPath) : []; }
+  async log(entry) { const log = await this.auditLog(); log.push(entry); await saveJson(this.logPath, log); }
+
+  // Review queue: packs the agent could not read or match with confidence.
+  // A pharmacist resolves each one by name; the agent never guesses for them.
+  async reviews() { return existsSync(this.reviewPath) ? loadJson(this.reviewPath) : []; }
+
+  async addReviews(items) {
+    const list = await this.reviews();
+    const added = items.map((it, k) => ({
+      id: `RV-${String(list.length + k + 1).padStart(3, '0')}`,
+      status: 'open', createdAt: new Date().toISOString(), ...it,
+    }));
+    list.push(...added);
+    await saveJson(this.reviewPath, list);
+    return added;
+  }
+
+  async resolveReview(id, by, resolution) {
+    if (!by) throw new Error('A pharmacist name is required to resolve a review item.');
+    const list = await this.reviews();
+    const rv = list.find((r) => r.id === id);
+    if (!rv) throw new Error(`No review item ${id}`);
+    if (rv.status !== 'open') throw new Error(`${id} is already ${rv.status}`);
+    Object.assign(rv, { status: 'resolved', resolvedBy: by, resolvedAt: new Date().toISOString(), resolution });
+    await saveJson(this.reviewPath, list);
+    await this.log({ at: rv.resolvedAt, id, kind: `review_${resolution.action}`, approver: by, changes: 0 });
+    return rv;
   }
 }
 

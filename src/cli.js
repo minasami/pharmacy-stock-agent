@@ -6,7 +6,7 @@ import { Store } from './inventory/store.js';
 import { today } from './inventory/expiry.js';
 import { shelfAudit, deliveryIntake, expiryReport, draftRestock } from './agent/workflows.js';
 import { formatRestock, formatExpiry } from './agent/format.js';
-import { checkRequest } from './safety/guard.js';
+import { answerStockQuestion } from './agent/ask.js';
 
 const USAGE = `Usage: stock-agent <command> [args] [--as-of YYYY-MM-DD] [--json]
   reset                         reset stock to the synthetic seed
@@ -62,15 +62,7 @@ async function main(argv) {
     }
     case 'approve': { const c = await store.approve(args[0], opt(args, '--by')); return console.log(`${c.id} approved by ${c.approvedBy}; stock updated.`); }
     case 'reject': { const c = await store.reject(args[0], opt(args, '--by'), opt(args, '--reason')); return console.log(`${c.id} rejected.`); }
-    case 'ask': {
-      const g = checkRequest(args[0]);
-      if (!g.allowed) return console.log(g.message);
-      const inv = await store.inventory();
-      const item = catalog.items.find((i) => String(args[0]).toLowerCase().includes(i.name.toLowerCase()));
-      if (!item) return console.log('I can answer stock questions about catalog items, e.g. "how many Paracetamol packs do we have?"');
-      const qty = inv.lots.filter((l) => l.sku === item.sku).reduce((s, l) => s + l.qty, 0);
-      return console.log(`${item.name} ${item.strength} x${item.pack_size}: ${qty} packs on hand.`);
-    }
+    case 'ask': return console.log(answerStockQuestion(args[0], await store.inventory(), catalog).answer);
     default: console.log(USAGE); if (cmd) process.exitCode = 1;
   }
 }
