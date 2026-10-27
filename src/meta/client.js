@@ -19,17 +19,47 @@ export class MetaClient {
     this.fetch = fetchImpl;
   }
 
+  // POST with a per-request timeout and a small retry on rate limits and server
+  // errors (HTTP 429 / 5xx, honouring Retry-After up to 10 s). Client errors
+  // (400, 401, 403, 404, 422) are not retried. The key never appears in errors.
   async post(path, body) {
-    const res = await this.fetch(`${this.cfg.baseUrl}${path}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${this.cfg.apiKey}` },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const detail = (await res.text()).slice(0, 300);
-      throw new Error(`Meta API ${path} failed: HTTP ${res.status} ${detail}`);
+    const { timeoutMs = 60000, retries = 2, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = this.cfg;
+    const payload = JSON.stringify(body);
+    for (let attempt = 0; ; attempt++) {
+      let res;
+      try {
+        res = await this.fetch(`${this.cfg.baseUrl}${path}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', authorization: `Bearer ${this.cfg.apiKey}` },
+          body: payload,
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+      } catch (e) {
+        const timedOut = e?.name === 'TimeoutError' || e?.name === 'AbortError';
+        if (attempt < retries) { await sleep(backoff(attempt)); continue; }
+        throw new Error(timedOut
+          ? `Meta API ${path} timed out after ${timeoutMs} ms`
+          : `Meta API ${path} network error: ${this.redact(e?.message ?? String(e))}`);
+      }
+      if (res.ok) {
+        try { return await res.json(); } catch { throw new Error(`Meta API ${path} returned a non-JSON body`); }
+      }
+      const retryable = res.status === 429 || res.status >= 500;
+      if (retryable && attempt < retries) {
+        const ra = Number(res.headers?.get?.('retry-after'));
+        await sleep(Number.isFinite(ra) && ra > 0 ? Math.min(ra * 1000, 10000) : backoff(attempt));
+        continue;
+      }
+      const detail = this.redact((await res.text().catch(() => '')).slice(0, 300));
+      const hint = res.status === 401 || res.status === 403
+        ? ' (check MODEL_API_KEY and that credits or a card are on the account)'
+        : res.status === 429 ? ' (rate limited; try again shortly)' : '';
+      throw new Error(`Meta API ${path} failed: HTTP ${res.status}${hint} ${detail}`.trim());
     }
-    return res.json();
+  }
+
+  redact(text) {
+    return this.cfg.apiKey ? String(text).split(this.cfg.apiKey).join('[redacted]') : String(text);
   }
 
   // SAM 3.1: segment every instance of a short noun phrase.
@@ -63,6 +93,8 @@ export class MetaClient {
     return parseJsonLoose(json?.choices?.[0]?.message?.content ?? '');
   }
 }
+
+const backoff = (attempt) => 500 * 2 ** attempt;
 
 export function parseJsonLoose(text) {
   if (typeof text !== 'string') return text;

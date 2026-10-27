@@ -31,6 +31,7 @@ export function loadConfig(env = process.env) {
     visionModel: env.META_VISION_MODEL || 'muse-spark-1.3',
     samModel: env.META_SAM_MODEL || 'sam-3.1',
     nearExpiryDays: positiveNumber(env.NEAR_EXPIRY_DAYS, 'NEAR_EXPIRY_DAYS', 90),
+    timeoutMs: positiveNumber(env.META_TIMEOUT_MS, 'META_TIMEOUT_MS', 60000),
   };
 }
 
