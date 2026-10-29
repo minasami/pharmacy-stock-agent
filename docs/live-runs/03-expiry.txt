@@ -1,0 +1,5 @@
+Expired (pull from sale): 1
+  - Omeprazole lot DG2308F: 2 packs, expiry 2026-09-30 (27 days ago)
+Near expiry: 2
+  - Amoxicillin lot OP2309K: 5 packs, expiry 2026-10-31 (in 4 days)
+  - Paracetamol lot NL2311C: 4 packs, expiry 2026-12-31 (in 65 days)

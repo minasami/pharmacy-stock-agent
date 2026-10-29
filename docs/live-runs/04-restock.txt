@@ -1,0 +1,14 @@
+RESTOCK ORDER DRAFT - Demo Pharmacy (fictional) - 2026-10-27
+Status: DRAFT, awaiting pharmacist approval. Nothing has been sent.
+Synthetic demo data.
+
+To: Supplier A (fictional)
+  - Omeprazole 20 mg x14: order 14 packs  [on hand 6, reorder at 8, par 20]
+
+To: Supplier C (fictional)
+  - Oral rehydration salts sachet x10: order 23 packs  [on hand 7, reorder at 10, par 30]
+
+To: Supplier B (fictional)
+  - Loratadine 10 mg x10: order 8 packs  [on hand 4, reorder at 5, par 12]
+
+Approved by (pharmacist): ____________________   Date: __________

@@ -117,7 +117,7 @@ What differs from the Meta Model API, following Baseten's docs:
   1. SAM 3.1 on the Meta Model API, if `MODEL_API_KEY` is also set. Then any photo works.
   2. Otherwise, the **recorded boxes of the bundled synthetic samples** (the offline fixture sidecars `samples/*.truth.json`). Only the boxes come from the fixture; Muse Spark Open does the reading live. The CLI ("Pack boxes: recorded sample boxes (offline fixture, not SAM)"), the web header and every scan result label this, and each box carries `source: "fixture"`.
   3. Any other photo without SAM is refused with HTTP 422 and a clear message. Regions are never guessed.
-- **Status:** request shapes are tested with a fake `fetch` (no network). **Not run against live Baseten yet**, since no Baseten key or credits were available.
+- **Status: tested live on Baseten Muse Spark Open (`meta-models/muse-spark-open-1026`) on 2026-10-29.** Shelf audit, delivery intake, the agent planner (it chose shelf_audit → delivery_intake → expiry_flags → restock_draft → final answer), the approval gate and the clinical refusal all ran. The shelf read matched the fixture truth exactly; on the delivery photo one readable pack was sent to human review instead of being received (conservative, not a wrong receive). Pack boxes came from the labelled sample fixtures because SAM is not offered on Baseten. Transcripts: [docs/live-runs](docs/live-runs/). Request shapes are also tested with a fake `fetch`.
 
 Modal also hosts Muse Spark Open on its endpoints. Pointing `BASETEN_BASE_URL` at another OpenAI-compatible host may work, but this is untested and not claimed.
 
@@ -145,7 +145,7 @@ See [Mock vs live provider](#mock-vs-live-provider) to switch to the live Meta M
 `src/meta` API clients (Meta, Baseten) and SAM parser · `src/providers` mock, meta and baseten · `src/inventory` expiry, matching, approval-gated store · `src/agent` scan, workflows, formatting, agent tools, loop and planners · `src/safety` guard · `src/web` web server · `web` browser UI · `data` synthetic catalog and seed stock · `samples` synthetic photos · `tests`.
 
 ## Roadmap
-- Baseten key: run the reads and agent planner on Muse Spark Open, and confirm the model slug.
+- Baseten: done on 2026-10-29 (see docs/live-runs); model slug `meta-models/muse-spark-open-1026` confirmed.
 - Live key: run the real SAM 3.1 and Muse Spark calls on the sample photos, record accuracy, and record the tool choices Muse Spark makes for a set of goals.
 - Arabic labels in the web UI.
 - Synthetic photo set made with Muse Image for harder cases (glare, angles, Arabic text).

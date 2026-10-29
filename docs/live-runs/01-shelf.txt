@@ -1,0 +1,7 @@
+Shelf audit (baseten, as of 2026-10-27): 9 packs detected
+Pack boxes: recorded sample boxes (offline fixture, not SAM)
+Pull now (expired): SYN-005 lot DG2308F
+Near expiry: SYN-001 lot NL2311C (2026-12-31), SYN-003 lot OP2309K (2026-10-31)
+Lots not in system: none
+Needs a human to read: region 8 (name not confidently matched; low read confidence; lot code unreadable)
+Proposed CS-001: quarantine 1 lot(s). Awaiting pharmacist approval.

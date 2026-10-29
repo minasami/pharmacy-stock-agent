@@ -1,0 +1,2 @@
+CS-001 shelf_quarantine: 1 change(s) from samples/shelf-01.png
+CS-002 delivery_receive: 1 change(s) from samples/delivery-01.png
