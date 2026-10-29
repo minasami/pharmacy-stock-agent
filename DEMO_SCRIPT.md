@@ -1,26 +1,43 @@
-# Demo video script (target 2:45, hard limit 3:00)
+# Demo video script (as recorded: 2:42)
 
-**Story in one line:** a stock-operations agent that chooses its own steps with tool calling (see → read → check → propose) and then **stops and waits for a named pharmacist** before anything changes. It handles stock only. It is not a medical-advice tool and not a one-shot image analyzer.
+Rendered headless from the verbatim live transcripts in [docs/live-runs](docs/live-runs/) (Muse Spark Open on Baseten, `meta-models/muse-spark-open-1026`, run 2026-10-29). There were no new model calls for the video. Piper TTS voice: en_US ryan-high. A banner reads "SYNTHETIC DATA ONLY" on every frame. Pack boxes come from labelled sample fixtures, not SAM (SAM isn't offered on Baseten). The Meta Model API run is still pending.
 
-**Setup before recording**
-```bash
-npm test                                     # all passing (shown at the end)
-AS_OF=2026-10-27 npm run web                 # http://127.0.0.1:8787
-```
-- Click **Reset demo data** in the footer. Zoom so the whole photo card fits. Approver name: "Demo Pharmacist".
-- **Preferred: record in live mode** (`MODEL_PROVIDER=meta`, `MODEL_API_KEY` set, key never on screen) after one successful live test run. Then the tool choices, boxes and reads on screen really come from Muse Spark and SAM 3.1.
-- **If recording offline (replay mode):** say so on screen and in the voice-over (lines marked *offline*). In replay mode the tool choices come from a deterministic mock planner and the results from synthetic fixture files, not from a live model call. Never claim a live call that did not happen.
-- Show only this repo, which was built during the event. No other projects, no real pharmacy names, people or products, no clinical wording.
+| Time | On screen |
+|---|---|
+| 0:00 | Title card |
+| 0:08 | Problem card |
+| 0:23 | "What you are seeing" card: live on Baseten, replayed transcripts, synthetic data, fixture boxes not SAM, Meta API pending |
+| 0:45 | Live agent run: shelf_audit → delivery_intake → expiry_flags → restock_draft → final answer; CS-001, CS-002 proposed |
+| 1:09 | Shelf photo with fixture boxes (region 8 amber = human review) |
+| 1:21 | Shelf audit output |
+| 1:40 | Delivery photo |
+| 1:43 | Delivery intake output (short-dated lot refused, 1 pack to review) |
+| 1:56 | Expiry flags + restock draft (no model call, nothing sent) |
+| 2:07 | pending → approve CS-001 --by "Demo Pharmacist" → stock updated |
+| 2:18 | Clinical question refused, zero steps |
+| 2:31 | End card: github.com/minasami/pharmacy-stock-agent, MIT |
 
-| Time | On screen | Voice-over |
-|---|---|---|
-| 0:00 to 0:20 | Title card with the loop: **Request → Muse Spark picks the next tool → SAM 3.1 finds packs, Muse Spark reads them → catalog + expiry checks → proposed change set → pharmacist approves → stock updates** | "I'm a pharmacist. Expired stock and manual counts cost pharmacies time and money. This agent plans and runs the whole stock check from a request and a couple of photos, then it stops: nothing changes until a named pharmacist approves. Stock only, never clinical advice. All data is synthetic." |
-| 0:20 to 0:55 | **Agent run**: request "Morning check: audit the shelf, receive the delivery and draft the reorder", both sample photos ticked, max 6 steps, **Run agent**. The step trace appears: delivery intake, shelf audit, restock draft, final answer | "I give it a goal, not a script. The model chooses each step through tool calling: delivery intake for the carton, shelf audit for the shelf, then the restock draft. It runs at most six steps. It has five tools and none of them can approve anything, so every result is a proposal." *Offline: "This run uses the offline planner that simulates the tool choices on synthetic fixtures; in live mode Muse Spark chooses them."* |
-| 0:55 to 1:20 | **Review queue**: the unclear pack's crop with its SAM box and reasons. Pick the item from the catalog (nothing pre-selected), type lot and expiry, **Record as identified** | "When a read is doubtful the agent doesn't guess, it queues the pack for a human. The pharmacist records what is printed. Nothing is pre-selected and the agent never suggests another product." |
-| 1:20 to 1:50 | **Approvals**: the two proposed change sets. Show the button disabled with no name, type "Demo Pharmacist", **Approve** both. Audit log appears | "The human gate. With no name, the button is disabled and the server refuses too. With a name, the change applies and goes in the audit log, next to the agent run that proposed it." |
-| 1:50 to 2:05 | **Agent run**: type "What can I give instead of Amoxicillin?", **Run agent** → refusal, zero steps | "Ask it anything clinical and a deterministic guard refuses before the model is even called, in English or Arabic." |
-| 2:05 to 2:20 | **Inventory & expiry**: expired lot now quarantined, delivery received, "Show only flagged lots" | "Inventory reflects only approved changes. The expired lot is quarantined and the short-dated delivery lot was never received." |
-| 2:20 to 2:35 | **Restock draft** by supplier, download | "And the restock draft the agent prepared, from par levels. Expired stock doesn't count, and it's a draft: nothing is sent." |
-| 2:35 to 2:52 | `BUILT_DURING_EVENT.md` / `git log`, then `npm test` all passing | "Everything here was built during the hackathon. No dependencies, every test offline, and it runs live on the Meta Model API or offline on synthetic fixtures." |
+## Narration
+Shelf Gate. A pharmacy stock agent with a human approval gate, built for the Meta hackathon theme, Build for Your World.
 
-**Checks before upload:** under 3:00; synthetic banner visible; the provider in the header matches what the voice-over claims; no real pharmacy names; no clinical or substitution wording; key never visible.
+I'm a pharmacist. In small pharmacies, stock counts and expiry checks are done by hand. Expired packs get missed, deliveries take time to check, and reorders are guesswork. I wanted an agent that does the checking, but never changes stock on its own.
+
+To be clear about what you're seeing. The model is Muse Spark Open on Baseten, run live on October twenty ninth. The output here is replayed word for word from the saved transcripts. All data is synthetic. The pack boxes come from labelled sample fixtures, not SAM, because SAM is not offered on Baseten. A run on the Meta Model API is still pending.
+
+I give the agent a goal, not a script. Morning check: audit the shelf, receive the delivery, and draft the reorder. Muse Spark Open chooses each step through tool calling. Shelf audit, then delivery intake, then expiry flags, then the restock draft, and a final answer. It has a six step limit, and none of its tools can approve anything. So it ends with two proposed change sets, and stock unchanged.
+
+This is the synthetic shelf photo. Each box is a pack. Muse Spark Open read the name, lot and expiry from each one, live. Pack eight was hard to read, so it was not guessed.
+
+The shelf audit flags one expired lot to pull from sale, and two near expiry lots. The unclear pack goes to a human for review. It proposes change set C S zero zero one, to quarantine the expired lot, and waits for a pharmacist. On this photo the live reads matched the ground truth exactly.
+
+Next, the delivery carton.
+
+Delivery intake proposes receiving two packs. A short dated lot is refused, not received. One pack went to human review instead of being received. That was a cautious miss on the live run, not a wrong entry.
+
+Expiry flags and the restock draft are plain code, not model calls. The draft is grouped by supplier from par levels. It is only a draft. Nothing is sent.
+
+This is the gate. The change sets wait in the pending list. Only when a named pharmacist approves C S zero zero one does the stock change, and the approval goes into the audit log.
+
+Ask it a clinical question, like what to give instead of an antibiotic, and a deterministic guard refuses with zero steps, before the model is called. Stock only. Never clinical advice.
+
+Shelf Gate. Zero dependencies, fifty three offline tests, MIT licensed, and on GitHub at minasami slash pharmacy stock agent. Thanks for watching.
